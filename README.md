@@ -1,0 +1,31 @@
+# plasma-taildrop
+
+A KDE [Purpose](https://invent.kde.org/frameworks/purpose) plugin that adds **Send via Tailscale…** to the
+Share menu of Dolphin, Gwenview, Spectacle and other KDE apps. It sends the selected files to a device in your
+tailnet with [Taildrop](https://tailscale.com/kb/1106/taildrop), talking directly to the local `tailscaled`.
+
+Your user must be the Tailscale operator to send files: `sudo tailscale set --operator=$USER`.
+
+## Building
+
+Needs KDE Frameworks 6 and Qt 6.8 or newer.
+
+```sh
+cmake -B build -DCMAKE_INSTALL_PREFIX=/usr
+cmake --build build
+sudo cmake --install build
+```
+
+## Development
+
+```sh
+cmake -B build -DBUILD_TESTING=ON
+cmake --build build
+QT_QPA_PLATFORM=offscreen ctest --test-dir build --output-on-failure
+cmake --build build --target clang-format
+reuse lint
+```
+
+## License
+
+[GPL-2.0-or-later](LICENSE).

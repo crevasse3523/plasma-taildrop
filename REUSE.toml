@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 crevasse3523 <335460626+crevasse3523@users.noreply.github.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+version = 1
+
+# Formats without comments, and documentation that reads better without a header
+[[annotations]]
+path = [
+    "**.md",
+]
+SPDX-FileCopyrightText = "2026 crevasse3523 <335460626+crevasse3523@users.noreply.github.com>"
+SPDX-License-Identifier = "GPL-2.0-or-later"
