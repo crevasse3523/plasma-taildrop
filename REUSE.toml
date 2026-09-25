@@ -10,3 +10,9 @@ path = [
 ]
 SPDX-FileCopyrightText = "2026 crevasse3523 <335460626+crevasse3523@users.noreply.github.com>"
 SPDX-License-Identifier = "GPL-2.0-or-later"
+
+# Anonymized tailscaled replies used as test data
+[[annotations]]
+path = "autotests/data/**"
+SPDX-FileCopyrightText = "2026 crevasse3523 <335460626+crevasse3523@users.noreply.github.com>"
+SPDX-License-Identifier = "CC0-1.0"

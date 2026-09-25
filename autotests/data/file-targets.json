@@ -1,0 +1,193 @@
+[
+  {
+    "Node": {
+      "ID": 1001,
+      "StableID": "nZetaStable1CNTRL",
+      "Name": "zeta.example-tailnet.ts.net.",
+      "User": 42,
+      "Key": "nodekey:0101010101010101010101010101010101010101010101010101010101010101",
+      "DiscoKey": "discokey:6565656565656565656565656565656565656565656565656565656565656565",
+      "Addresses": [
+        "100.64.0.1/32",
+        "fd7a:115c:a1e0::1/128"
+      ],
+      "AllowedIPs": [
+        "100.64.0.1/32",
+        "fd7a:115c:a1e0::1/128"
+      ],
+      "Endpoints": [
+        "192.0.2.1:41641"
+      ],
+      "HomeDERP": 1,
+      "Hostinfo": {
+        "OS": "linux",
+        "Hostname": "zeta"
+      },
+      "Created": "2026-01-01T00:00:00Z",
+      "Cap": 142,
+      "Online": false,
+      "LastSeen": "2026-09-12T17:23:59.1Z",
+      "ComputedName": "zeta",
+      "ComputedNameWithHost": "zeta"
+    },
+    "PeerAPIURL": "http://100.64.0.1:40001"
+  },
+  {
+    "Node": {
+      "ID": 1002,
+      "StableID": "nBetaStable2CNTRL",
+      "Name": "Beta.example-tailnet.ts.net.",
+      "User": 42,
+      "Key": "nodekey:0202020202020202020202020202020202020202020202020202020202020202",
+      "DiscoKey": "discokey:6666666666666666666666666666666666666666666666666666666666666666",
+      "Addresses": [
+        "100.64.0.2/32",
+        "fd7a:115c:a1e0::2/128"
+      ],
+      "AllowedIPs": [
+        "100.64.0.2/32",
+        "fd7a:115c:a1e0::2/128"
+      ],
+      "Endpoints": [
+        "192.0.2.2:41641"
+      ],
+      "HomeDERP": 1,
+      "Hostinfo": {
+        "OS": "windows",
+        "Hostname": "Beta"
+      },
+      "Created": "2026-01-01T00:00:00Z",
+      "Cap": 142,
+      "Online": true,
+      "ComputedName": "Beta",
+      "ComputedNameWithHost": "Beta"
+    },
+    "PeerAPIURL": "http://100.64.0.2:40002"
+  },
+  {
+    "Node": {
+      "ID": 1003,
+      "StableID": "nAlphaStable3CNTRL",
+      "Name": "alpha.example-tailnet.ts.net.",
+      "User": 42,
+      "Key": "nodekey:0303030303030303030303030303030303030303030303030303030303030303",
+      "DiscoKey": "discokey:6767676767676767676767676767676767676767676767676767676767676767",
+      "Addresses": [
+        "100.64.0.3/32",
+        "fd7a:115c:a1e0::3/128"
+      ],
+      "AllowedIPs": [
+        "100.64.0.3/32",
+        "fd7a:115c:a1e0::3/128"
+      ],
+      "Endpoints": [
+        "192.0.2.3:41641"
+      ],
+      "HomeDERP": 1,
+      "Hostinfo": {
+        "OS": "macOS",
+        "Hostname": "alpha"
+      },
+      "Created": "2026-01-01T00:00:00Z",
+      "Cap": 142,
+      "Online": false,
+      "LastSeen": "2025-11-09T19:15:50.1Z",
+      "Expired": true,
+      "ComputedName": "alpha",
+      "ComputedNameWithHost": "alpha"
+    },
+    "PeerAPIURL": "http://100.64.0.3:40003"
+  },
+  {
+    "Node": {
+      "ID": 1004,
+      "StableID": "nGammaStable4CNTRL",
+      "Name": "gamma.example-tailnet.ts.net.",
+      "User": 42,
+      "Key": "nodekey:0404040404040404040404040404040404040404040404040404040404040404",
+      "DiscoKey": "discokey:6868686868686868686868686868686868686868686868686868686868686868",
+      "Addresses": [
+        "fd7a:115c:a1e0::4/128"
+      ],
+      "AllowedIPs": [
+        "fd7a:115c:a1e0::4/128"
+      ],
+      "Endpoints": [
+        "192.0.2.4:41641"
+      ],
+      "HomeDERP": 1,
+      "Hostinfo": {
+        "OS": "android",
+        "Hostname": "gamma"
+      },
+      "Created": "2026-01-01T00:00:00Z",
+      "Cap": 142,
+      "Online": true,
+      "ComputedName": "gamma",
+      "ComputedNameWithHost": "gamma"
+    },
+    "PeerAPIURL": "http://[fd7a:115c:a1e0::4]:40004"
+  },
+  {
+    "Node": {
+      "ID": 1005,
+      "StableID": "nDeltaStable5CNTRL",
+      "Name": "delta.example-tailnet.ts.net.",
+      "User": 42,
+      "Key": "nodekey:0505050505050505050505050505050505050505050505050505050505050505",
+      "DiscoKey": "discokey:6969696969696969696969696969696969696969696969696969696969696969",
+      "Addresses": [
+        "100.64.0.5/32",
+        "fd7a:115c:a1e0::5/128"
+      ],
+      "AllowedIPs": [
+        "100.64.0.5/32",
+        "fd7a:115c:a1e0::5/128"
+      ],
+      "Endpoints": [
+        "192.0.2.5:41641"
+      ],
+      "HomeDERP": 1,
+      "Hostinfo": {
+        "OS": "linux",
+        "Hostname": "delta"
+      },
+      "Created": "2026-01-01T00:00:00Z",
+      "Cap": 142,
+      "Online": false,
+      "LastSeen": "2026-09-28T18:31:15.1Z",
+      "ComputedName": "delta",
+      "ComputedNameWithHost": "delta"
+    },
+    "PeerAPIURL": "http://100.64.0.5:40005"
+  },
+  {
+    "Node": {
+      "ID": 1006,
+      "StableID": "nUnknownStat6CNTRL",
+      "Name": "epsilon.example-tailnet.ts.net.",
+      "User": 42,
+      "Key": "nodekey:0606060606060606060606060606060606060606060606060606060606060606",
+      "DiscoKey": "discokey:6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a",
+      "Addresses": [
+        "100.64.0.6/32"
+      ],
+      "AllowedIPs": [
+        "100.64.0.6/32"
+      ],
+      "Endpoints": [
+        "192.0.2.6:41641"
+      ],
+      "HomeDERP": 1,
+      "Hostinfo": {
+        "OS": "linux",
+        "Hostname": "epsilon"
+      },
+      "Created": "2026-01-01T00:00:00Z",
+      "Cap": 142,
+      "ComputedName": "epsilon",
+      "ComputedNameWithHost": "epsilon"
+    },
+    "PeerAPIURL": "http://100.64.0.6:40006"
+  }
+]

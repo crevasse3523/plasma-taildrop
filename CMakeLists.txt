@@ -19,6 +19,12 @@ include(FeatureSummary)
 # 6.8: QNetworkRequest::FullLocalServerNameAttribute, for HTTP over the tailscaled unix socket
 find_package(Qt6 6.8 REQUIRED COMPONENTS Core Network)
 
+add_subdirectory(src/core)
+
+if(BUILD_TESTING)
+    add_subdirectory(autotests)
+endif()
+
 # Only src/ and autotests/: a glob over the whole tree would also pick up build and packaging trees
 file(GLOB_RECURSE ALL_CLANG_FORMAT_SOURCE_FILES CONFIGURE_DEPENDS src/*.cpp src/*.h autotests/*.cpp autotests/*.h)
 kde_clang_format(${ALL_CLANG_FORMAT_SOURCE_FILES})
