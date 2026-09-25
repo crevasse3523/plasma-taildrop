@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 crevasse3523 <335460626+crevasse3523@users.noreply.github.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
+[Desktop Entry]
+Type=Application
+Name=Send via Tailscale
+Comment=Sends shared files to the devices of your tailnet
+Icon=network-vpn
+Exec=@KDE_INSTALL_FULL_LIBEXECDIR@/plasma-taildrop-send
+NoDisplay=true
+Categories=Network;FileTransfer;

@@ -11,6 +11,9 @@
 // `tailscale set --operator=$USER`; the other users can only read, e.g. list the file targets.
 namespace LocalApi
 {
+// What the user runs to become the operator; not translated, the shell needs it as it is
+inline const QString OperatorCommand = QStringLiteral("sudo tailscale set --operator=$USER");
+
 // PLASMA_TAILDROP_SOCKET when set, otherwise the first socket that exists, otherwise /run/tailscale/tailscaled.sock
 QString socketPath();
 

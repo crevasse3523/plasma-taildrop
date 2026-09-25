@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 crevasse3523 <335460626+crevasse3523@users.noreply.github.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
+[Global]
+IconName=network-vpn
+Comment=Send via Tailscale
+DesktopEntry=@HELPER_DESKTOP_ID@
+
+[Event/transferFinished]
+Name=Files sent
+Comment=All shared files reached the device
+Action=Popup
+
+[Event/transferFailed]
+Name=Sending failed
+Comment=Some shared files were not sent
+Action=Popup
