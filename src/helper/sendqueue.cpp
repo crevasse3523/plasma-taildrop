@@ -90,6 +90,38 @@ void SendQueue::cancel(int batchId)
     startNext();
 }
 
+void SendQueue::retry(int batchId)
+{
+    SendBatch *batch = find(batchId);
+    if (!batch || !batch->isFinished()) {
+        return;
+    }
+    bool retried = false;
+    for (SendItem &item : batch->items) {
+        if (item.state == SendItem::Failed || item.state == SendItem::Cancelled) {
+            // tailscaled continues where the device's partial file ends, so starting over costs little
+            item.state = SendItem::Queued;
+            item.failure = SendItem::NoFailure;
+            item.errorString.clear();
+            item.sent = 0;
+            retried = true;
+        }
+    }
+    if (!retried) {
+        return;
+    }
+    m_batches.move(batch - m_batches.data(), m_batches.size() - 1);
+    Q_EMIT batchChanged(batchId);
+    startNext();
+}
+
+void SendQueue::forget(int batchId)
+{
+    m_batches.removeIf([batchId](const SendBatch &batch) {
+        return batch.id == batchId && batch.isFinished();
+    });
+}
+
 const SendBatch *SendQueue::batch(int batchId) const
 {
     for (const SendBatch &batch : m_batches) {

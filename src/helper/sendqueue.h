@@ -85,6 +85,10 @@ public:
     int enqueue(const QString &stableId, const QString &deviceName, const QStringList &files);
     // Stops the batch; its items that are not Done yet become Cancelled
     void cancel(int batchId);
+    // Queues the Failed and Cancelled items of a finished batch again, behind all other batches
+    void retry(int batchId);
+    // Drops a finished batch
+    void forget(int batchId);
 
     // nullptr for an unknown id
     const SendBatch *batch(int batchId) const;

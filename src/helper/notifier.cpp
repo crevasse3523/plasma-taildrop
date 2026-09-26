@@ -41,6 +41,7 @@ QString failureLine(const SendItem &item)
 
 void Notifier::notify(const SendBatch &batch)
 {
+    const int batchId = batch.id;
     const qsizetype done = batch.doneCount();
     const bool cancelled = std::any_of(batch.items.cbegin(), batch.items.cend(), [](const SendItem &item) {
         return item.state == SendItem::Cancelled;
@@ -63,6 +64,17 @@ void Notifier::notify(const SendBatch &batch)
             }
         }
         notification->setText(lines.join(u'\n'));
+        connect(notification->addAction(i18n("Retry")), &KNotificationAction::activated, this, [this, batchId] {
+            Q_EMIT retryRequested(batchId);
+        });
     }
+    m_shown.insert(batchId, notification);
+    connect(notification, &KNotification::closed, this, [this, notification, batchId] {
+        // a retry that failed at once shows its notification before the old one is closed
+        if (m_shown.value(batchId) == notification) {
+            m_shown.remove(batchId);
+            Q_EMIT closed(batchId);
+        }
+    });
     notification->sendEvent();
 }

@@ -13,7 +13,7 @@ BatchJob::BatchJob(SendQueue *queue, int batchId, QObject *parent)
     , m_batchId(batchId)
 {
     setCapabilities(KJob::Killable);
-    // Notifier tells how it went
+    // Notifier tells how it went, with a Retry action the job view cannot offer
     setFinishedNotificationHidden();
 }
 

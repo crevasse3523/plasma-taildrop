@@ -24,6 +24,15 @@ SendService::SendService(QObject *parent)
     , m_tracker(new KUiServerV2JobTracker(this))
 {
     connect(m_queue, &SendQueue::batchFinished, this, &SendService::onBatchFinished);
+    connect(m_notifier, &Notifier::retryRequested, this, [this](int batchId) {
+        m_queue->retry(batchId);
+        track(batchId);
+        updateIdle();
+    });
+    connect(m_notifier, &Notifier::closed, this, [this](int batchId) {
+        // does nothing when the batch is being retried
+        m_queue->forget(batchId);
+    });
     m_idle.setSingleShot(true);
     m_idle.setInterval(IdleMs);
     connect(&m_idle, &QTimer::timeout, this, &SendService::idle);

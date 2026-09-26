@@ -242,6 +242,55 @@ private Q_SLOTS:
         finish();
         QCOMPARE(sentNames(), (QStringList{u"a1"_s, u"c1"_s}));
     }
+
+    void retryOnlyWhatFailed()
+    {
+        const int first = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s), file(u"a3"_s)});
+        const int second = m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s)});
+        finish();
+        Q_EMIT m_transport->progress(3, 10);
+        finish(LocalApi::Outcome::PeerUnreachable);
+        QVERIFY(m_queue->batch(first)->isFinished());
+
+        QSignalSpy changed(m_queue, &SendQueue::batchChanged);
+        m_queue->retry(first);
+        QCOMPARE(changed.size(), 1);
+        QCOMPARE(item(first, 0).state, SendItem::Done);
+        for (int index : {1, 2}) {
+            QCOMPARE(item(first, index).state, SendItem::Queued);
+            QCOMPARE(item(first, index).failure, SendItem::NoFailure);
+        }
+        QCOMPARE(item(first, 1).sent, 0);
+        // behind the batch that waited meanwhile
+        QCOMPARE(m_queue->batchesAhead(first), 1);
+        QCOMPARE(m_queue->batchesAhead(second), 0);
+
+        finish();
+        finish();
+        finish();
+        QCOMPARE(sentNames(), (QStringList{u"a1"_s, u"a2"_s, u"b1"_s, u"a2"_s, u"a3"_s}));
+        QVERIFY(m_queue->batch(first)->isFinished());
+        QCOMPARE(item(first, 2).state, SendItem::Done);
+    }
+
+    void retryNeedsFinishedBatch()
+    {
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s)});
+        m_queue->retry(id);
+        QCOMPARE(item(id, 0).state, SendItem::Sending);
+        QCOMPARE(m_transport->sends.size(), 1);
+    }
+
+    void forget()
+    {
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s)});
+        m_queue->forget(id);
+        QVERIFY(m_queue->batch(id));
+        finish();
+        m_queue->forget(id);
+        QVERIFY(!m_queue->batch(id));
+        QVERIFY(!m_queue->isBusy());
+    }
 };
 
 QTEST_GUILESS_MAIN(SendQueueTest)

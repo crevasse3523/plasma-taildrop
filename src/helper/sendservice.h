@@ -18,7 +18,7 @@ class SendService : public QObject
 {
     Q_OBJECT
 public:
-    // How long to stay after the queue ran empty
+    // How long to stay after the queue ran empty, which is also how long Retry in a notification works
     static constexpr int IdleMs = 60000;
 
     explicit SendService(QObject *parent = nullptr);

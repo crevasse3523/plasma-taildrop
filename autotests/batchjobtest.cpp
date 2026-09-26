@@ -84,6 +84,28 @@ private Q_SLOTS:
         QVERIFY(!anySpeed(speed));
     }
 
+    // the files sent before the retry are not sent again, so they are no speed
+    void retriedBatchCountsOnlyNewBytes()
+    {
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s, 1000), file(u"a2"_s, 1000)});
+        finish();
+        finish(LocalApi::Outcome::Other);
+        m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s, 1000)});
+        m_queue->retry(id);
+        BatchJob *job = newJob(id);
+        QSignalSpy speed(job, &KJob::speed);
+        job->start();
+        QTest::qWait(1100);
+        finish();
+        Q_EMIT m_transport->progress(10, 1000);
+        QVERIFY(!anySpeed(speed));
+        // a second later, only the bytes of a2 count, not the 1000 of a1 sent before the retry
+        QTest::qWait(1100);
+        Q_EMIT m_transport->progress(20, 1000);
+        QVERIFY(anySpeed(speed));
+        QVERIFY(speed.last().at(1).toULongLong() < 100);
+    }
+
     // the speed goes on from one file to the next
     void speedSpansFiles()
     {
