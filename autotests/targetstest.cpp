@@ -51,7 +51,11 @@ private Q_SLOTS:
         QCOMPARE(beta.ip, u"100.64.0.2"_s);
         QCOMPARE(beta.os, u"windows"_s);
         QVERIFY(beta.online);
-        QVERIFY(!find(targets, u"zeta"_s).online);
+        QVERIFY(!beta.lastSeen.isValid());
+
+        const Target zeta = find(targets, u"zeta"_s);
+        QVERIFY(!zeta.online);
+        QCOMPARE(zeta.lastSeen, QDateTime(QDate(2026, 9, 12), QTime(17, 23, 59, 100), QTimeZone::UTC));
     }
 
     void onlyIpv6Address()
@@ -64,6 +68,7 @@ private Q_SLOTS:
         const Target epsilon = find(parseTargetsJson(m_json), u"epsilon"_s);
         QCOMPARE(epsilon.stableId, u"nUnknownStat6CNTRL"_s);
         QVERIFY(!epsilon.online);
+        QVERIFY(!epsilon.lastSeen.isValid());
     }
 
     void skipsIncompleteEntries()
@@ -95,6 +100,36 @@ private Q_SLOTS:
     {
         QFETCH(QByteArray, json);
         QVERIFY(parseTargetsJson(json).isEmpty());
+    }
+
+    void connectionPaths()
+    {
+        QFile file(QFINDTESTDATA("data/status.json"));
+        QVERIFY(file.open(QIODevice::ReadOnly));
+        auto targets = parseTargetsJson(m_json);
+        readConnectionPaths(file.readAll(), targets);
+        QCOMPARE(find(targets, u"Beta"_s).directAddress, u"192.168.1.20"_s);
+        QCOMPARE(find(targets, u"Beta"_s).relay, u"waw"_s);
+        QCOMPARE(find(targets, u"gamma"_s).directAddress, u"2001:db8::7"_s);
+        QCOMPARE(find(targets, u"gamma"_s).peerRelay, QString());
+        QCOMPARE(find(targets, u"alpha"_s).directAddress, QString());
+        QCOMPARE(find(targets, u"alpha"_s).peerRelay, u"198.51.100.7"_s);
+        QCOMPARE(find(targets, u"delta"_s).directAddress, QString());
+        QCOMPARE(find(targets, u"delta"_s).relay, u"waw"_s);
+        QCOMPARE(find(targets, u"epsilon"_s).relay, QString());
+        // not in the status reply
+        QCOMPARE(find(targets, u"zeta"_s).relay, QString());
+        QCOMPARE(targets.size(), 6);
+    }
+
+    void connectionPathsMalformed()
+    {
+        auto targets = parseTargetsJson(m_json);
+        readConnectionPaths("{\"Peer\": [1, 2]}", targets);
+        readConnectionPaths("not json", targets);
+        QVERIFY(std::all_of(targets.cbegin(), targets.cend(), [](const Target &target) {
+            return target.directAddress.isEmpty() && target.peerRelay.isEmpty() && target.relay.isEmpty();
+        }));
     }
 
     void filePutPath_data()

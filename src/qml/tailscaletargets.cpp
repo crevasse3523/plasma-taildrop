@@ -4,7 +4,9 @@
 #include "tailscaletargets.h"
 #include "localapi.h"
 
+#include <KFormat>
 #include <KLocalizedString>
+#include <QLocale>
 #include <QNetworkAccessManager>
 #include <algorithm>
 
@@ -34,13 +36,19 @@ TailscaleTargetsModel::TailscaleTargetsModel(QObject *parent)
 void TailscaleTargetsModel::reload()
 {
     const bool wasLoading = loading();
-    if (m_targetsReply) {
-        m_targetsReply->disconnect(this);
-        m_targetsReply->abort();
-        m_targetsReply->deleteLater();
+    for (QNetworkReply *reply : {m_targetsReply, m_statusReply}) {
+        if (reply) {
+            reply->disconnect(this);
+            reply->abort();
+            reply->deleteLater();
+        }
     }
-    m_targetsReply = m_network->get(request(u"file-targets"_s));
-    connect(m_targetsReply, &QNetworkReply::finished, this, &TailscaleTargetsModel::finishLoading);
+    const auto watch = [this](QNetworkReply *reply) {
+        connect(reply, &QNetworkReply::finished, this, &TailscaleTargetsModel::finishLoading);
+        return reply;
+    };
+    m_targetsReply = watch(m_network->get(request(u"file-targets"_s)));
+    m_statusReply = watch(m_network->get(request(u"status"_s)));
     if (!wasLoading) {
         Q_EMIT loadingChanged();
     }
@@ -48,12 +56,20 @@ void TailscaleTargetsModel::reload()
 
 void TailscaleTargetsModel::finishLoading()
 {
+    if (!m_targetsReply->isFinished() || !m_statusReply->isFinished()) {
+        return;
+    }
+
     // a 200 cut off in the middle of the list is not an empty list
     const LocalApi::Outcome classified = LocalApi::classify(m_targetsReply);
     const LocalApi::Outcome listed =
         classified == LocalApi::Outcome::Ok && m_targetsReply->error() != QNetworkReply::NoError ? LocalApi::Outcome::Other : classified;
     beginResetModel();
     m_targets = listed == LocalApi::Outcome::Ok ? parseTargetsJson(m_targetsReply->readAll()) : QList<Target>();
+    // without it the list only lacks the connection paths
+    if (LocalApi::classify(m_statusReply) == LocalApi::Outcome::Ok) {
+        readConnectionPaths(m_statusReply->readAll(), m_targets);
+    }
     endResetModel();
 
     switch (listed) {
@@ -71,7 +87,8 @@ void TailscaleTargetsModel::finishLoading()
     }
 
     m_targetsReply->deleteLater();
-    m_targetsReply = nullptr;
+    m_statusReply->deleteLater();
+    m_targetsReply = m_statusReply = nullptr;
     Q_EMIT loadingChanged();
     Q_EMIT loaded();
 }
@@ -98,6 +115,27 @@ QVariant TailscaleTargetsModel::data(const QModelIndex &index, int role) const
         return target.os;
     case OnlineRole:
         return target.online;
+    case StatusTextRole:
+        if (target.online) {
+            return QString();
+        }
+        return target.lastSeen.isValid()
+            ? i18nc("@info device status", "offline, last seen %1", KFormat().formatRelativeDateTime(target.lastSeen.toLocalTime(), QLocale::ShortFormat))
+            : i18nc("@info device status", "offline");
+    case PathRole:
+        if (!target.online) {
+            return QString();
+        }
+        if (!target.directAddress.isEmpty()) {
+            return i18nc("@info how the device is reached", "direct (%1)", target.directAddress);
+        }
+        if (!target.peerRelay.isEmpty()) {
+            return i18nc("@info how the device is reached, %1 is the IP address of a Tailscale peer relay", "via peer relay (%1)", target.peerRelay);
+        }
+        if (!target.relay.isEmpty()) {
+            return i18nc("@info how the device is reached, %1 is a DERP region such as waw", "via DERP relay (%1)", target.relay);
+        }
+        return QString();
     }
     return {};
 }
@@ -110,6 +148,8 @@ QHash<int, QByteArray> TailscaleTargetsModel::roleNames() const
         {IpRole, "ip"},
         {OsRole, "os"},
         {OnlineRole, "online"},
+        {StatusTextRole, "statusText"},
+        {PathRole, "path"},
     };
 }
 

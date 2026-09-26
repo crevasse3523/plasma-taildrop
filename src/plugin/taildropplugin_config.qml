@@ -93,11 +93,15 @@ ColumnLayout {
                 required property string ip
                 required property string os
                 required property bool online
+                required property string statusText
+                required property string path
 
                 width: ListView.view.width
                 enabled: online
                 text: name
-                subtitle: online ? ip : i18nd("plasma-taildrop", "offline") // qmllint disable unqualified
+                subtitle: !online ? statusText
+                    : path === "" ? ip
+                    : i18ndc("plasma-taildrop", "how the device is reached, its Tailscale IP address", "%1, %2", path, ip) // qmllint disable unqualified
                 icon.name: os === "android" || os === "iOS" ? "smartphone" : os === "" ? "network-vpn" : "computer"
                 checked: root.chosen === stableId
                 onClicked: root.chosen = stableId

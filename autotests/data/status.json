@@ -1,0 +1,72 @@
+{
+  "Version": "1.102.4-t0000000000-g0000000000",
+  "BackendState": "Running",
+  "Self": {
+    "ID": "nSelfStable0CNTRL",
+    "HostName": "self",
+    "CurAddr": "",
+    "Relay": "waw",
+    "Online": true
+  },
+  "Peer": {
+    "nodekey:0202020202020202020202020202020202020202020202020202020202020202": {
+      "ID": "nBetaStable2CNTRL",
+      "HostName": "Beta",
+      "OS": "windows",
+      "CurAddr": "192.168.1.20:41641",
+      "Relay": "waw",
+      "PeerRelay": "",
+      "Online": true,
+      "TaildropTarget": 1
+    },
+    "nodekey:0303030303030303030303030303030303030303030303030303030303030303": {
+      "ID": "nAlphaStable3CNTRL",
+      "HostName": "alpha",
+      "OS": "linux",
+      "CurAddr": "",
+      "Relay": "waw",
+      "PeerRelay": "198.51.100.7:7777:vni:3",
+      "Online": false,
+      "TaildropTarget": 5
+    },
+    "nodekey:0404040404040404040404040404040404040404040404040404040404040404": {
+      "ID": "nGammaStable4CNTRL",
+      "HostName": "gamma",
+      "OS": "android",
+      "CurAddr": "[2001:db8::7]:41641",
+      "Relay": "fra",
+      "PeerRelay": "",
+      "Online": true,
+      "TaildropTarget": 1
+    },
+    "nodekey:0505050505050505050505050505050505050505050505050505050505050505": {
+      "ID": "nDeltaStable5CNTRL",
+      "HostName": "delta",
+      "OS": "linux",
+      "CurAddr": "",
+      "Relay": "waw",
+      "PeerRelay": "",
+      "Online": false,
+      "TaildropTarget": 5
+    },
+    "nodekey:0606060606060606060606060606060606060606060606060606060606060606": {
+      "ID": "nUnknownStat6CNTRL",
+      "HostName": "epsilon",
+      "OS": "linux",
+      "CurAddr": "",
+      "Relay": "",
+      "PeerRelay": "",
+      "Online": false,
+      "TaildropTarget": 5
+    },
+    "nodekey:0909090909090909090909090909090909090909090909090909090909090909": {
+      "ID": "nNoTaildrop9CNTRL",
+      "HostName": "router",
+      "OS": "linux",
+      "CurAddr": "192.168.1.1:41641",
+      "Relay": "waw",
+      "Online": true,
+      "TaildropTarget": 3
+    }
+  }
+}

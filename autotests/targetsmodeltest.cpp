@@ -18,6 +18,7 @@ class TargetsModelTest : public QObject
     Q_OBJECT
 
     QByteArray m_targetsJson;
+    QByteArray m_statusJson;
 
     static QByteArray read(const QString &name)
     {
@@ -30,6 +31,7 @@ class TargetsModelTest : public QObject
     {
         auto fake = std::make_unique<FakeLocalApi>();
         fake->respond("file-targets", 200, m_targetsJson);
+        fake->respond("status", 200, m_statusJson);
         return fake;
     }
 
@@ -55,7 +57,8 @@ private Q_SLOTS:
     {
         KLocalizedString::setLanguages({u"en_US"_s});
         m_targetsJson = read(u"file-targets.json"_s);
-        QVERIFY(!m_targetsJson.isEmpty());
+        m_statusJson = read(u"status.json"_s);
+        QVERIFY(!m_targetsJson.isEmpty() && !m_statusJson.isEmpty());
     }
 
     void lists()
@@ -71,9 +74,45 @@ private Q_SLOTS:
 
         QCOMPARE(value(model, u"nBetaStable2CNTRL"_s, TailscaleTargetsModel::IpRole), u"100.64.0.2"_s);
         QCOMPARE(value(model, u"nBetaStable2CNTRL"_s, TailscaleTargetsModel::OsRole), u"windows"_s);
-        QCOMPARE(value(model, u"nBetaStable2CNTRL"_s, TailscaleTargetsModel::OnlineRole), true);
-        QCOMPARE(value(model, u"nDeltaStable5CNTRL"_s, TailscaleTargetsModel::OnlineRole), false);
-        QCOMPARE(fake->requests.size(), 1);
+        QCOMPARE(value(model, u"nBetaStable2CNTRL"_s, TailscaleTargetsModel::StatusTextRole), QString());
+        QCOMPARE(value(model, u"nBetaStable2CNTRL"_s, TailscaleTargetsModel::PathRole), u"direct (192.168.1.20)"_s);
+        QCOMPARE(value(model, u"nGammaStable4CNTRL"_s, TailscaleTargetsModel::PathRole), u"direct (2001:db8::7)"_s);
+        // offline: no path, when it was last seen if known
+        QCOMPARE(value(model, u"nDeltaStable5CNTRL"_s, TailscaleTargetsModel::PathRole), QString());
+        QVERIFY(value(model, u"nDeltaStable5CNTRL"_s, TailscaleTargetsModel::StatusTextRole).toString().startsWith(u"offline, last seen "_s));
+        QCOMPARE(value(model, u"nUnknownStat6CNTRL"_s, TailscaleTargetsModel::StatusTextRole), u"offline"_s);
+        QCOMPARE(fake->requests.size(), 2);
+    }
+
+    void relayed()
+    {
+        const auto fake = tailscaled();
+        fake->respond("status", 200, QByteArray(m_statusJson).replace("192.168.1.20:41641", ""));
+        TailscaleTargetsModel model;
+        QVERIFY(waitLoaded(model));
+        QCOMPARE(value(model, u"nBetaStable2CNTRL"_s, TailscaleTargetsModel::PathRole), u"via DERP relay (waw)"_s);
+    }
+
+    void peerRelayed()
+    {
+        const auto fake = tailscaled();
+        fake->respond("status",
+                      200,
+                      QByteArray(m_statusJson).replace("192.168.1.20:41641", "").replace("\"PeerRelay\": \"\"", "\"PeerRelay\": \"[2001:db8::9]:7777:vni:5\""));
+        TailscaleTargetsModel model;
+        QVERIFY(waitLoaded(model));
+        QCOMPARE(value(model, u"nBetaStable2CNTRL"_s, TailscaleTargetsModel::PathRole), u"via peer relay (2001:db8::9)"_s);
+    }
+
+    void withoutStatus()
+    {
+        const auto fake = tailscaled();
+        fake->respond("status", 500);
+        TailscaleTargetsModel model;
+        QVERIFY(waitLoaded(model));
+        QCOMPARE(model.error(), QString());
+        QCOMPARE(model.rowCount(), 6);
+        QCOMPARE(value(model, u"nBetaStable2CNTRL"_s, TailscaleTargetsModel::PathRole), QString());
     }
 
     // tailscaled went away in the middle of the list
@@ -140,7 +179,7 @@ private Q_SLOTS:
         fake->respond("file-targets", 0);
         TailscaleTargetsModel model;
         QSignalSpy loaded(&model, &TailscaleTargetsModel::loaded);
-        QTRY_COMPARE(fake->requests.size(), 1);
+        QTRY_COMPARE(fake->requests.size(), 2);
         fake->respond("file-targets", 200, m_targetsJson);
         model.reload();
         QVERIFY(loaded.wait(5000));

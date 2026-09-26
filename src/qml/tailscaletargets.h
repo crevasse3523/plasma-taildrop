@@ -12,6 +12,7 @@ class QNetworkAccessManager;
 class QNetworkReply;
 
 // Taildrop targets from tailscaled's LocalAPI: online, then offline devices.
+// Also finds out how each device is reached.
 class TailscaleTargetsModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -27,6 +28,8 @@ public:
         IpRole,
         OsRole,
         OnlineRole,
+        StatusTextRole, // e.g. "offline, last seen yesterday at 17:23"; empty when online
+        PathRole, // how an online device is reached, e.g. "direct (192.168.1.20)"; empty otherwise
     };
 
     explicit TailscaleTargetsModel(QObject *parent = nullptr);
@@ -55,6 +58,7 @@ private:
 
     QNetworkAccessManager *m_network;
     QNetworkReply *m_targetsReply = nullptr;
+    QNetworkReply *m_statusReply = nullptr;
     QList<Target> m_targets;
     QString m_error;
 };
