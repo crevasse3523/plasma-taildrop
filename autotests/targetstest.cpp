@@ -43,7 +43,7 @@ private Q_SLOTS:
 
     void parsesFields()
     {
-        const auto targets = parseTargetsJson(m_json);
+        const auto targets = parseTargetsJson(m_json, {});
         QCOMPARE(names(targets), (QStringList{u"Beta"_s, u"gamma"_s, u"alpha"_s, u"delta"_s, u"epsilon"_s, u"zeta"_s}));
         const Target beta = find(targets, u"Beta"_s);
         QCOMPARE(beta.stableId, u"nBetaStable2CNTRL"_s);
@@ -52,6 +52,7 @@ private Q_SLOTS:
         QCOMPARE(beta.os, u"windows"_s);
         QVERIFY(beta.online);
         QVERIFY(!beta.lastSeen.isValid());
+        QVERIFY(!beta.lastUsed);
 
         const Target zeta = find(targets, u"zeta"_s);
         QVERIFY(!zeta.online);
@@ -60,15 +61,30 @@ private Q_SLOTS:
 
     void onlyIpv6Address()
     {
-        QCOMPARE(find(parseTargetsJson(m_json), u"gamma"_s).ip, u"fd7a:115c:a1e0::4"_s);
+        QCOMPARE(find(parseTargetsJson(m_json, {}), u"gamma"_s).ip, u"fd7a:115c:a1e0::4"_s);
     }
 
     void missingOnlineMeansOffline()
     {
-        const Target epsilon = find(parseTargetsJson(m_json), u"epsilon"_s);
+        const Target epsilon = find(parseTargetsJson(m_json, {}), u"epsilon"_s);
         QCOMPARE(epsilon.stableId, u"nUnknownStat6CNTRL"_s);
         QVERIFY(!epsilon.online);
         QVERIFY(!epsilon.lastSeen.isValid());
+    }
+
+    void ordersLastUsedThenOnlineThenAlphabetically()
+    {
+        const auto targets = parseTargetsJson(m_json, u"nDeltaStable5CNTRL"_s);
+        QCOMPARE(names(targets), (QStringList{u"delta"_s, u"Beta"_s, u"gamma"_s, u"alpha"_s, u"epsilon"_s, u"zeta"_s}));
+        QVERIFY(targets[0].lastUsed);
+        QVERIFY(!targets[0].online);
+        QVERIFY(!targets[1].lastUsed);
+    }
+
+    void unknownLastUsed()
+    {
+        const auto targets = parseTargetsJson(m_json, u"nGoneCNTRL"_s);
+        QVERIFY(std::none_of(targets.cbegin(), targets.cend(), std::mem_fn(&Target::lastUsed)));
     }
 
     void skipsIncompleteEntries()
@@ -80,11 +96,12 @@ private Q_SLOTS:
             " {\"Node\": {\"StableID\": \"nB\"}},"
             " {\"PeerAPIURL\": \"http://100.64.0.9:1\"},"
             " 42]";
-        const auto targets = parseTargetsJson(json);
+        const auto targets = parseTargetsJson(json, {});
         QCOMPARE(names(targets), QStringList{u"a"_s});
         QCOMPARE(targets[0].ip, QString());
         QCOMPARE(targets[0].os, QString());
         QVERIFY(!targets[0].online);
+        QVERIFY(!targets[0].lastUsed);
     }
 
     void malformedJson_data()
@@ -99,14 +116,14 @@ private Q_SLOTS:
     void malformedJson()
     {
         QFETCH(QByteArray, json);
-        QVERIFY(parseTargetsJson(json).isEmpty());
+        QVERIFY(parseTargetsJson(json, u"nA"_s).isEmpty());
     }
 
     void connectionPaths()
     {
         QFile file(QFINDTESTDATA("data/status.json"));
         QVERIFY(file.open(QIODevice::ReadOnly));
-        auto targets = parseTargetsJson(m_json);
+        auto targets = parseTargetsJson(m_json, {});
         readConnectionPaths(file.readAll(), targets);
         QCOMPARE(find(targets, u"Beta"_s).directAddress, u"192.168.1.20"_s);
         QCOMPARE(find(targets, u"Beta"_s).relay, u"waw"_s);
@@ -124,7 +141,7 @@ private Q_SLOTS:
 
     void connectionPathsMalformed()
     {
-        auto targets = parseTargetsJson(m_json);
+        auto targets = parseTargetsJson(m_json, {});
         readConnectionPaths("{\"Peer\": [1, 2]}", targets);
         readConnectionPaths("not json", targets);
         QVERIFY(std::all_of(targets.cbegin(), targets.cend(), [](const Target &target) {

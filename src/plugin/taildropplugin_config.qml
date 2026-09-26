@@ -34,7 +34,7 @@ ColumnLayout {
         // a device chosen before Refresh may have gone offline or away
         onLoaded: {
             if (!targets.isOnline(root.chosen)) {
-                root.chosen = ""
+                root.chosen = targets.preselected
             }
         }
     }

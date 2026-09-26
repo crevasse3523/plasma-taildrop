@@ -7,11 +7,13 @@
 #include "localapitransport.h"
 #include "notifier.h"
 #include "sendqueue.h"
+#include "settings.h"
 
 #include <KLocalizedString>
 #include <KUiServerV2JobTracker>
 #include <QCommandLineParser>
 #include <QDir>
+#include <QSettings>
 
 using namespace Qt::StringLiterals;
 
@@ -82,7 +84,12 @@ void SendService::track(int batchId)
 
 void SendService::onBatchFinished(int batchId)
 {
-    m_notifier->notify(*m_queue->batch(batchId));
+    const SendBatch *batch = m_queue->batch(batchId);
+    if (batch->doneCount() > 0) {
+        // preselected in the Share dialog next time
+        QSettings(Settings::Name).setValue(Settings::LastTargetIdKey, batch->stableId);
+    }
+    m_notifier->notify(*batch);
     updateIdle();
 }
 

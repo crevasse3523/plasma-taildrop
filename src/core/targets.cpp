@@ -20,7 +20,7 @@ QString host(const QString &address)
 }
 }
 
-QList<Target> parseTargetsJson(const QByteArray &json)
+QList<Target> parseTargetsJson(const QByteArray &json, const QString &lastUsedId)
 {
     QList<Target> targets;
     // [{"Node": {"StableID": …, "ComputedName": …, "Addresses": ["100.64.0.1/32", …], "Online": true,
@@ -37,9 +37,13 @@ QList<Target> parseTargetsJson(const QByteArray &json)
         target.os = node["Hostinfo"_L1]["OS"_L1].toString();
         target.lastSeen = QDateTime::fromString(node["LastSeen"_L1].toString(), Qt::ISODateWithMs);
         target.online = node["Online"_L1].toBool();
+        target.lastUsed = target.stableId == lastUsedId;
         targets.append(target);
     }
     std::stable_sort(targets.begin(), targets.end(), [](const Target &a, const Target &b) {
+        if (a.lastUsed != b.lastUsed) {
+            return a.lastUsed;
+        }
         if (a.online != b.online) {
             return a.online;
         }

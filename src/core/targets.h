@@ -19,12 +19,13 @@ struct Target {
     QString peerRelay; // IP address of the Tailscale peer relay the device is reached through, if any
     QString relay; // DERP region the device is reached through without a direct connection, e.g. "waw"
     bool online = false;
+    bool lastUsed = false;
 };
 
 // Parses the reply of GET /localapi/v0/file-targets and orders it for display:
-// online, then offline devices, alphabetically within each group.
+// the last used device first, then online, then offline devices, alphabetically within each group.
 // Entries without a StableID or a name are skipped; malformed JSON gives an empty list.
-QList<Target> parseTargetsJson(const QByteArray &json);
+QList<Target> parseTargetsJson(const QByteArray &json, const QString &lastUsedId);
 
 // Fills directAddress, peerRelay and relay of the targets from the reply of GET /localapi/v0/status; malformed JSON changes nothing
 void readConnectionPaths(const QByteArray &statusJson, QList<Target> &targets);

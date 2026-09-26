@@ -11,7 +11,7 @@
 class QNetworkAccessManager;
 class QNetworkReply;
 
-// Taildrop targets from tailscaled's LocalAPI: online, then offline devices.
+// Taildrop targets from tailscaled's LocalAPI: the last used one first, then online, then offline devices.
 // Also finds out how each device is reached.
 class TailscaleTargetsModel : public QAbstractListModel
 {
@@ -20,6 +20,8 @@ class TailscaleTargetsModel : public QAbstractListModel
     Q_PROPERTY(bool loading READ loading NOTIFY loadingChanged)
     // why there is no list, e.g. tailscaled is not running; empty otherwise
     Q_PROPERTY(QString error READ error NOTIFY loaded)
+    // StableID of the last used device when it is online, so the dialog can preselect it; empty otherwise
+    Q_PROPERTY(QString preselected READ preselected NOTIFY loaded)
 
 public:
     enum Roles {
@@ -40,6 +42,7 @@ public:
 
     bool loading() const;
     QString error() const;
+    QString preselected() const;
 
     // Whether the device with that StableID is listed and online, i.e. can still be chosen
     Q_INVOKABLE bool isOnline(const QString &stableId) const;

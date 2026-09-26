@@ -3,11 +3,13 @@
 
 #include "tailscaletargets.h"
 #include "localapi.h"
+#include "settings.h"
 
 #include <KFormat>
 #include <KLocalizedString>
 #include <QLocale>
 #include <QNetworkAccessManager>
+#include <QSettings>
 #include <algorithm>
 
 using namespace Qt::StringLiterals;
@@ -60,12 +62,14 @@ void TailscaleTargetsModel::finishLoading()
         return;
     }
 
+    const QString lastUsedId = QSettings(Settings::Name).value(Settings::LastTargetIdKey).toString();
+
     // a 200 cut off in the middle of the list is not an empty list
     const LocalApi::Outcome classified = LocalApi::classify(m_targetsReply);
     const LocalApi::Outcome listed =
         classified == LocalApi::Outcome::Ok && m_targetsReply->error() != QNetworkReply::NoError ? LocalApi::Outcome::Other : classified;
     beginResetModel();
-    m_targets = listed == LocalApi::Outcome::Ok ? parseTargetsJson(m_targetsReply->readAll()) : QList<Target>();
+    m_targets = listed == LocalApi::Outcome::Ok ? parseTargetsJson(m_targetsReply->readAll(), lastUsedId) : QList<Target>();
     // without it the list only lacks the connection paths
     if (LocalApi::classify(m_statusReply) == LocalApi::Outcome::Ok) {
         readConnectionPaths(m_statusReply->readAll(), m_targets);
@@ -176,4 +180,12 @@ QString TailscaleTargetsModel::nameOf(const QString &stableId) const
         return target.stableId == stableId;
     });
     return target != m_targets.cend() ? target->name : QString();
+}
+
+QString TailscaleTargetsModel::preselected() const
+{
+    if (!m_targets.isEmpty() && m_targets.first().lastUsed && m_targets.first().online) {
+        return m_targets.first().stableId;
+    }
+    return {};
 }

@@ -7,6 +7,7 @@ add_library(tailscalecore STATIC
     files.cpp files.h
     helperoptions.h
     localapi.cpp localapi.h
+    settings.h
     targets.cpp targets.h
     urlproblemtext.h)
 set_target_properties(tailscalecore PROPERTIES POSITION_INDEPENDENT_CODE ON)

@@ -4,11 +4,14 @@
 // The device list of the Share dialog, loaded from FakeLocalApi
 
 #include "fakelocalapi.h"
+#include "settings.h"
 #include "tailscaletargets.h"
 
 #include <KLocalizedString>
 #include <QFile>
+#include <QSettings>
 #include <QSignalSpy>
+#include <QStandardPaths>
 #include <QTest>
 
 using namespace Qt::StringLiterals;
@@ -55,10 +58,16 @@ class TargetsModelTest : public QObject
 private Q_SLOTS:
     void initTestCase()
     {
+        QStandardPaths::setTestModeEnabled(true);
         KLocalizedString::setLanguages({u"en_US"_s});
         m_targetsJson = read(u"file-targets.json"_s);
         m_statusJson = read(u"status.json"_s);
         QVERIFY(!m_targetsJson.isEmpty() && !m_statusJson.isEmpty());
+    }
+
+    void init()
+    {
+        QSettings(Settings::Name).clear();
     }
 
     void lists()
@@ -71,6 +80,7 @@ private Q_SLOTS:
         QCOMPARE(model.error(), QString());
         QCOMPARE(model.rowCount(), 6);
         QCOMPARE(model.index(0).data(TailscaleTargetsModel::NameRole), u"Beta"_s);
+        QCOMPARE(model.preselected(), QString());
 
         QCOMPARE(value(model, u"nBetaStable2CNTRL"_s, TailscaleTargetsModel::IpRole), u"100.64.0.2"_s);
         QCOMPARE(value(model, u"nBetaStable2CNTRL"_s, TailscaleTargetsModel::OsRole), u"windows"_s);
@@ -136,6 +146,25 @@ private Q_SLOTS:
         qunsetenv("PLASMA_TAILDROP_SOCKET");
         QCOMPARE(model.rowCount(), 0);
         QCOMPARE(model.error(), u"Tailscale is not running."_s);
+    }
+
+    void preselectsLastUsed()
+    {
+        QSettings(Settings::Name).setValue(Settings::LastTargetIdKey, u"nGammaStable4CNTRL"_s);
+        const auto fake = tailscaled();
+        TailscaleTargetsModel model;
+        QVERIFY(waitLoaded(model));
+        QCOMPARE(model.preselected(), u"nGammaStable4CNTRL"_s);
+    }
+
+    void noPreselectionWhenOffline()
+    {
+        QSettings(Settings::Name).setValue(Settings::LastTargetIdKey, u"nDeltaStable5CNTRL"_s);
+        const auto fake = tailscaled();
+        TailscaleTargetsModel model;
+        QVERIFY(waitLoaded(model));
+        QCOMPARE(model.index(0).data(TailscaleTargetsModel::StableIdRole), u"nDeltaStable5CNTRL"_s);
+        QCOMPARE(model.preselected(), QString());
     }
 
     void isOnline()
