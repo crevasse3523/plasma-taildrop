@@ -38,7 +38,7 @@ TailscaleTargetsModel::TailscaleTargetsModel(QObject *parent)
 void TailscaleTargetsModel::reload()
 {
     const bool wasLoading = loading();
-    for (QNetworkReply *reply : {m_targetsReply, m_statusReply}) {
+    for (QNetworkReply *reply : {m_targetsReply, m_statusReply, m_probeReply}) {
         if (reply) {
             reply->disconnect(this);
             reply->abort();
@@ -51,6 +51,9 @@ void TailscaleTargetsModel::reload()
     };
     m_targetsReply = watch(m_network->get(request(u"file-targets"_s)));
     m_statusReply = watch(m_network->get(request(u"status"_s)));
+    // An empty upload to a device that cannot exist: tailscaled checks the permission to send (403) before it
+    // looks for the device (404), so this tells whether sending would be allowed without sending anything
+    m_probeReply = watch(m_network->put(request(LocalApi::filePutPath(u"plasma-taildrop-probe"_s, u"probe"_s)), QByteArray()));
     if (!wasLoading) {
         Q_EMIT loadingChanged();
     }
@@ -58,7 +61,7 @@ void TailscaleTargetsModel::reload()
 
 void TailscaleTargetsModel::finishLoading()
 {
-    if (!m_targetsReply->isFinished() || !m_statusReply->isFinished()) {
+    if (!m_targetsReply->isFinished() || !m_statusReply->isFinished() || !m_probeReply->isFinished()) {
         return;
     }
 
@@ -90,9 +93,20 @@ void TailscaleTargetsModel::finishLoading()
         m_error = i18n("Could not list the devices: %1", LocalApi::message(m_targetsReply));
     }
 
+    const LocalApi::Outcome probed = LocalApi::classify(m_probeReply);
+    m_canSend = probed == LocalApi::Outcome::NodeNotFound;
+    if (m_canSend || !m_error.isEmpty()) {
+        m_permissionHint.clear();
+    } else if (probed == LocalApi::Outcome::NotOperator) {
+        m_permissionHint = i18n("Tailscale only lets its operator send files. To make yourself the operator, run: %1", LocalApi::OperatorCommand);
+    } else {
+        m_permissionHint = i18n("Tailscale does not accept files to send: %1", LocalApi::message(m_probeReply));
+    }
+
     m_targetsReply->deleteLater();
     m_statusReply->deleteLater();
-    m_targetsReply = m_statusReply = nullptr;
+    m_probeReply->deleteLater();
+    m_targetsReply = m_statusReply = m_probeReply = nullptr;
     Q_EMIT loadingChanged();
     Q_EMIT loaded();
 }
@@ -165,6 +179,16 @@ bool TailscaleTargetsModel::loading() const
 QString TailscaleTargetsModel::error() const
 {
     return m_error;
+}
+
+bool TailscaleTargetsModel::canSend() const
+{
+    return m_canSend;
+}
+
+QString TailscaleTargetsModel::permissionHint() const
+{
+    return m_permissionHint;
 }
 
 bool TailscaleTargetsModel::isOnline(const QString &stableId) const

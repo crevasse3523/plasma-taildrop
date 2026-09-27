@@ -12,7 +12,7 @@ class QNetworkAccessManager;
 class QNetworkReply;
 
 // Taildrop targets from tailscaled's LocalAPI: the last used one first, then online, then offline devices.
-// Also finds out how each device is reached.
+// Also finds out whether this user may send files at all, and how each device is reached.
 class TailscaleTargetsModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -20,6 +20,10 @@ class TailscaleTargetsModel : public QAbstractListModel
     Q_PROPERTY(bool loading READ loading NOTIFY loadingChanged)
     // why there is no list, e.g. tailscaled is not running; empty otherwise
     Q_PROPERTY(QString error READ error NOTIFY loaded)
+    // false when tailscaled would refuse to send files for this user
+    Q_PROPERTY(bool canSend READ canSend NOTIFY loaded)
+    // why canSend is false and what to do about it; empty otherwise
+    Q_PROPERTY(QString permissionHint READ permissionHint NOTIFY loaded)
     // StableID of the last used device when it is online, so the dialog can preselect it; empty otherwise
     Q_PROPERTY(QString preselected READ preselected NOTIFY loaded)
 
@@ -42,6 +46,8 @@ public:
 
     bool loading() const;
     QString error() const;
+    bool canSend() const;
+    QString permissionHint() const;
     QString preselected() const;
 
     // Whether the device with that StableID is listed and online, i.e. can still be chosen
@@ -62,6 +68,9 @@ private:
     QNetworkAccessManager *m_network;
     QNetworkReply *m_targetsReply = nullptr;
     QNetworkReply *m_statusReply = nullptr;
+    QNetworkReply *m_probeReply = nullptr;
     QList<Target> m_targets;
     QString m_error;
+    QString m_permissionHint;
+    bool m_canSend = false;
 };

@@ -29,12 +29,13 @@ class TargetsModelTest : public QObject
         return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray();
     }
 
-    // A fake tailscaled with the fixtures
+    // A fake tailscaled with the fixtures, for a user allowed to send
     std::unique_ptr<FakeLocalApi> tailscaled() const
     {
         auto fake = std::make_unique<FakeLocalApi>();
         fake->respond("file-targets", 200, m_targetsJson);
         fake->respond("status", 200, m_statusJson);
+        fake->respond("file-put/plasma-taildrop-probe/probe", 404, "unknown peer\n");
         return fake;
     }
 
@@ -78,6 +79,8 @@ private Q_SLOTS:
         QVERIFY(waitLoaded(model));
         QVERIFY(!model.loading());
         QCOMPARE(model.error(), QString());
+        QVERIFY(model.canSend());
+        QCOMPARE(model.permissionHint(), QString());
         QCOMPARE(model.rowCount(), 6);
         QCOMPARE(model.index(0).data(TailscaleTargetsModel::NameRole), u"Beta"_s);
         QCOMPARE(model.preselected(), QString());
@@ -91,7 +94,15 @@ private Q_SLOTS:
         QCOMPARE(value(model, u"nDeltaStable5CNTRL"_s, TailscaleTargetsModel::PathRole), QString());
         QVERIFY(value(model, u"nDeltaStable5CNTRL"_s, TailscaleTargetsModel::StatusTextRole).toString().startsWith(u"offline, last seen "_s));
         QCOMPARE(value(model, u"nUnknownStat6CNTRL"_s, TailscaleTargetsModel::StatusTextRole), u"offline"_s);
-        QCOMPARE(fake->requests.size(), 2);
+
+        // the probe sends nothing
+        const auto probe = std::find_if(fake->requests.cbegin(), fake->requests.cend(), [](const FakeLocalApi::Request &request) {
+            return request.method == "PUT";
+        });
+        QVERIFY(probe != fake->requests.cend());
+        QCOMPARE(probe->path, "/localapi/v0/file-put/plasma-taildrop-probe/probe");
+        QCOMPARE(probe->body, QByteArray());
+        QCOMPARE(fake->requests.size(), 3);
     }
 
     void relayed()
@@ -137,6 +148,17 @@ private Q_SLOTS:
         QVERIFY(!model.error().contains(u"[{"_s));
     }
 
+    void notOperator()
+    {
+        const auto fake = tailscaled();
+        fake->respond("file-put/plasma-taildrop-probe/probe", 403, "file access denied\n");
+        TailscaleTargetsModel model;
+        QVERIFY(waitLoaded(model));
+        QCOMPARE(model.rowCount(), 6);
+        QVERIFY(!model.canSend());
+        QVERIFY(model.permissionHint().contains(u"sudo tailscale set --operator=$USER"_s));
+    }
+
     void daemonDown()
     {
         QTemporaryDir dir;
@@ -146,6 +168,9 @@ private Q_SLOTS:
         qunsetenv("PLASMA_TAILDROP_SOCKET");
         QCOMPARE(model.rowCount(), 0);
         QCOMPARE(model.error(), u"Tailscale is not running."_s);
+        QVERIFY(!model.canSend());
+        // the error says it all
+        QCOMPARE(model.permissionHint(), QString());
     }
 
     void preselectsLastUsed()
@@ -208,7 +233,7 @@ private Q_SLOTS:
         fake->respond("file-targets", 0);
         TailscaleTargetsModel model;
         QSignalSpy loaded(&model, &TailscaleTargetsModel::loaded);
-        QTRY_COMPARE(fake->requests.size(), 2);
+        QTRY_COMPARE(fake->requests.size(), 3);
         fake->respond("file-targets", 200, m_targetsJson);
         model.reload();
         QVERIFY(loaded.wait(5000));

@@ -27,7 +27,7 @@ ColumnLayout {
 
     readonly property var summary: FileSummary.summarize(urls)
     property string chosen
-    readonly property bool canPick: summary.problem === "" && !summary.hasFolders
+    readonly property bool canPick: summary.problem === "" && targets.canSend && !summary.hasFolders
 
     TailscaleTargetsModel {
         id: targets
@@ -64,6 +64,14 @@ ColumnLayout {
         Layout.fillWidth: true
         type: Kirigami.MessageType.Error
         text: root.summary.problem
+        visible: text !== ""
+    }
+
+    // tailscaled refuses to send files for this user, typically because they are not its operator
+    Kirigami.InlineMessage {
+        Layout.fillWidth: true
+        type: Kirigami.MessageType.Error
+        text: targets.permissionHint
         visible: text !== ""
     }
 
