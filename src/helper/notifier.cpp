@@ -24,6 +24,8 @@ QString reason(const SendItem &item)
         return i18n("Tailscale is not running");
     case SendItem::PeerUnreachable:
         return i18n("the device could not be reached");
+    case SendItem::Stalled:
+        return i18n("the device stopped replying");
     case SendItem::FileError:
     case SendItem::Other:
     case SendItem::NotSent:

@@ -4,8 +4,28 @@
 #include "sendqueue.h"
 
 #include <QFileInfo>
+#include <QTimer>
 
 #include <algorithm>
+
+StallTimer::StallTimer(QObject *parent)
+    : Watchdog(parent)
+    , m_timer(new QTimer(this))
+{
+    m_timer->setSingleShot(true);
+    m_timer->setInterval(TimeoutMs);
+    connect(m_timer, &QTimer::timeout, this, &Watchdog::expired);
+}
+
+void StallTimer::restart()
+{
+    m_timer->start();
+}
+
+void StallTimer::stop()
+{
+    m_timer->stop();
+}
 
 bool SendBatch::isFinished() const
 {
@@ -39,12 +59,21 @@ qsizetype SendBatch::doneCount() const
     });
 }
 
-SendQueue::SendQueue(Transport *transport, QObject *parent)
+SendQueue::SendQueue(Transport *transport, Watchdog *watchdog, QObject *parent)
     : QObject(parent)
     , m_transport(transport)
+    , m_watchdog(watchdog)
 {
     connect(m_transport, &Transport::progress, this, &SendQueue::onProgress);
     connect(m_transport, &Transport::finished, this, &SendQueue::onSent);
+    connect(m_watchdog, &Watchdog::expired, this, [this] {
+        m_transport->abort();
+        const int batchId = m_activeBatch;
+        endActive(SendItem::Failed, SendItem::Stalled, {});
+        endRest(batchId, SendItem::Failed, SendItem::NotSent);
+        finishIfDone(batchId);
+        startNext();
+    });
 }
 
 SendQueue::~SendQueue()
@@ -194,6 +223,7 @@ void SendQueue::upload()
         return;
     }
     item.state = SendItem::Sending;
+    m_watchdog->restart();
     Q_EMIT batchChanged(m_activeBatch);
 }
 
@@ -205,6 +235,7 @@ void SendQueue::stopActive()
 void SendQueue::endActive(SendItem::State state, SendItem::Failure failure, const QString &errorString)
 {
     SendItem &item = activeItem();
+    m_watchdog->stop();
     item.state = state;
     item.failure = failure;
     item.errorString = errorString;
@@ -243,6 +274,7 @@ void SendQueue::onProgress(qint64 bytesSent, qint64 bytesTotal)
         return;
     }
     SendItem &item = activeItem();
+    m_watchdog->restart();
     item.sent = bytesSent;
     // the file may have changed since it was queued
     item.size = bytesTotal;

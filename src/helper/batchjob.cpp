@@ -7,7 +7,7 @@
 
 #include <algorithm>
 
-BatchJob::BatchJob(SendQueue *queue, int batchId, QObject *parent)
+BatchJob::BatchJob(SendQueue *queue, int batchId, QObject *parent, int quietMs)
     : KJob(parent)
     , m_queue(queue)
     , m_batchId(batchId)
@@ -15,6 +15,13 @@ BatchJob::BatchJob(SendQueue *queue, int batchId, QObject *parent)
     setCapabilities(KJob::Killable);
     // Notifier tells how it went, with a Retry action the job view cannot offer
     setFinishedNotificationHidden();
+    m_quiet.setSingleShot(true);
+    m_quiet.setInterval(quietMs);
+    connect(&m_quiet, &QTimer::timeout, this, [this] {
+        m_isQuiet = true;
+        emitSpeed(0);
+        update();
+    });
 }
 
 void BatchJob::start()
@@ -52,6 +59,12 @@ QString BatchJob::title() const
     return i18n("Sending to %1", batch ? batch->deviceName : QString());
 }
 
+void BatchJob::restartQuiet()
+{
+    m_isQuiet = false;
+    m_quiet.start();
+}
+
 void BatchJob::update()
 {
     const SendBatch *batch = m_queue->batch(m_batchId);
@@ -66,6 +79,7 @@ void BatchJob::update()
 
     if (sent != m_progressBytes) {
         m_progressBytes = sent;
+        restartQuiet();
         if (m_speedClock.elapsed() >= 1000) {
             emitSpeed((sent - m_speedBytes) * 1000 / m_speedClock.restart());
             m_speedBytes = sent;
@@ -86,6 +100,7 @@ void BatchJob::update()
     } else {
         if (active->fileName != m_file) {
             m_file = active->fileName;
+            restartQuiet();
             Q_EMIT description(this, title(), {i18nc("The file being sent", "File"), m_file});
         }
         if (active->state != m_state) {
@@ -94,10 +109,21 @@ void BatchJob::update()
                 m_speedClock.restart();
                 m_speedBytes = sent;
             }
+            // each step waits anew
             m_state = active->state;
+            restartQuiet();
         }
-        if (active->state == SendItem::Finishing) {
-            message = i18nc("@info:status waiting for the device to confirm the file", "Finishing…");
+        switch (active->state) {
+        case SendItem::Sending:
+        case SendItem::Finishing:
+            if (m_isQuiet) {
+                message = i18nc("@info:status", "Device not replying, still trying…");
+            } else if (active->state == SendItem::Finishing) {
+                message = i18nc("@info:status waiting for the device to confirm the file", "Finishing…");
+            }
+            break;
+        default:
+            break;
         }
     }
     if (message != m_message) {

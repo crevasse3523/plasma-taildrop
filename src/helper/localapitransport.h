@@ -9,7 +9,7 @@ class QNetworkAccessManager;
 class QNetworkReply;
 
 // Sends a file with PUT file-put, streamed from disk. Only HTTP 200 counts as sent: the IPN bus of tailscaled
-// reports success even for some failed transfers.
+// reports success even for some failed transfers. There is no timeout here, the queue watches for stalls.
 class LocalApiTransport : public Transport
 {
     Q_OBJECT

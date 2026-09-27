@@ -39,12 +39,31 @@ public:
     }
 };
 
+class FakeWatchdog : public Watchdog
+{
+public:
+    bool active = false;
+    int restarts = 0;
+
+    void restart() override
+    {
+        active = true;
+        ++restarts;
+    }
+
+    void stop() override
+    {
+        active = false;
+    }
+};
+
 // A queue over the fakes, and files for it to send; the test's init() and cleanup() call initQueue() and cleanupQueue()
 class SendQueueFixture
 {
 protected:
     QTemporaryDir m_dir;
     FakeTransport *m_transport = nullptr;
+    FakeWatchdog *m_watchdog = nullptr;
     SendQueue *m_queue = nullptr;
 
     void initQueue()
@@ -53,12 +72,14 @@ protected:
             qFatal("no temporary folder");
         }
         m_transport = new FakeTransport;
-        m_queue = new SendQueue(m_transport);
+        m_watchdog = new FakeWatchdog;
+        m_queue = new SendQueue(m_transport, m_watchdog);
     }
 
     void cleanupQueue()
     {
         delete m_queue;
+        delete m_watchdog;
         delete m_transport;
     }
 

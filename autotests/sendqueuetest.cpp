@@ -69,6 +69,7 @@ private Q_SLOTS:
         finish();
         QCOMPARE(finished.size(), 2);
         QVERIFY(!m_queue->isBusy());
+        QVERIFY(!m_watchdog->active);
     }
 
     void totals()
@@ -188,24 +189,44 @@ private Q_SLOTS:
     {
         QSignalSpy changed(m_queue, &SendQueue::batchChanged);
         const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s, 100)});
+        QVERIFY(m_watchdog->active);
+        const int restarts = m_watchdog->restarts;
         changed.clear();
 
         Q_EMIT m_transport->progress(40, 100);
         QCOMPARE(item(id, 0).sent, 40);
         QCOMPARE(item(id, 0).state, SendItem::Sending);
+        QCOMPARE(m_watchdog->restarts, restarts + 1);
         QCOMPARE(changed.size(), 1);
         QCOMPARE(changed.first(), QVariantList{id});
 
         // the same count again is no progress
         Q_EMIT m_transport->progress(40, 100);
+        QCOMPARE(m_watchdog->restarts, restarts + 1);
         QCOMPARE(changed.size(), 1);
 
         Q_EMIT m_transport->progress(100, 100);
         QCOMPARE(item(id, 0).state, SendItem::Finishing);
+        QVERIFY(m_watchdog->active);
 
         finish();
         QCOMPARE(item(id, 0).state, SendItem::Done);
         QCOMPARE(item(id, 0).sent, 100);
+        QVERIFY(!m_watchdog->active);
+    }
+
+    void stallFailsBatch()
+    {
+        const int first = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s)});
+        m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s)});
+        Q_EMIT m_transport->progress(5, 10);
+        Q_EMIT m_watchdog->expired();
+        QCOMPARE(m_transport->aborts, 1);
+        QCOMPARE(item(first, 0).state, SendItem::Failed);
+        QCOMPARE(item(first, 0).failure, SendItem::Stalled);
+        QCOMPARE(item(first, 1).failure, SendItem::NotSent);
+        QCOMPARE(sentNames(), (QStringList{u"a1"_s, u"b1"_s}));
+        QVERIFY(m_watchdog->active);
     }
 
     void cancelActiveBatch()

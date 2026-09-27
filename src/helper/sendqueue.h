@@ -9,6 +9,8 @@
 #include <QObject>
 #include <QString>
 
+class QTimer;
+
 // Uploads one file to a device at a time. After abort() it reports nothing more about that upload.
 class Transport : public QObject
 {
@@ -27,6 +29,37 @@ Q_SIGNALS:
     void finished(LocalApi::Outcome outcome, const QString &message);
 };
 
+// Counts down while an upload makes no progress; the tests replace it to control time
+class Watchdog : public QObject
+{
+    Q_OBJECT
+public:
+    using QObject::QObject;
+
+    virtual void restart() = 0;
+    virtual void stop() = 0;
+
+Q_SIGNALS:
+    void expired();
+};
+
+// The Watchdog for real uploads
+class StallTimer : public Watchdog
+{
+    Q_OBJECT
+public:
+    // Longer than the 10 s tailscaled may spend asking the device what it already has before any data flows
+    static constexpr int TimeoutMs = 45000;
+
+    explicit StallTimer(QObject *parent = nullptr);
+
+    void restart() override;
+    void stop() override;
+
+private:
+    QTimer *m_timer;
+};
+
 struct SendItem {
     enum State {
         Queued,
@@ -43,6 +76,7 @@ struct SendItem {
         NodeNotFound, // the device is gone or does not accept files
         DaemonDown, // tailscaled is not running
         PeerUnreachable, // tailscaled could not reach the device
+        Stalled, // no progress for StallTimer::TimeoutMs
         NotSent, // not tried, because an earlier item stopped the batch
         Other,
     };
@@ -71,14 +105,14 @@ struct SendBatch {
 
 // All uploads of the helper: batches are sent first come, first served, one file at a time.
 // - A file that cannot be read fails alone and the batch goes on.
-// - A refusal by tailscaled (not operator, unknown device, not running) or by the device, or an unreachable device
-//   fails the current item and marks the rest of its batch NotSent, since they would fail the same way.
+// - A refusal by tailscaled (not operator, unknown device, not running) or by the device, an unreachable device or a
+//   stalled upload fails the current item and marks the rest of its batch NotSent, since they would fail the same way.
 class SendQueue : public QObject
 {
     Q_OBJECT
 public:
     // Does not take ownership of the collaborators
-    SendQueue(Transport *transport, QObject *parent = nullptr);
+    SendQueue(Transport *transport, Watchdog *watchdog, QObject *parent = nullptr);
     ~SendQueue() override;
 
     // Returns the id of the new batch; files must not be empty
@@ -116,6 +150,7 @@ private:
     void onSent(LocalApi::Outcome outcome, const QString &message);
 
     Transport *m_transport;
+    Watchdog *m_watchdog;
     QList<SendBatch> m_batches; // in the order they are served
     int m_nextId = 1;
     // the item being sent, if any

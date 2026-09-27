@@ -19,7 +19,7 @@ using namespace Qt::StringLiterals;
 
 SendService::SendService(QObject *parent)
     : QObject(parent)
-    , m_queue(new SendQueue(new LocalApiTransport(this), this))
+    , m_queue(new SendQueue(new LocalApiTransport(this), new StallTimer(this), this))
     , m_notifier(new Notifier(this))
     , m_tracker(new KUiServerV2JobTracker(this))
 {
@@ -40,7 +40,7 @@ SendService::SendService(QObject *parent)
 
 SendService::~SendService()
 {
-    // before the transport, which it still stops; the children go in the order they came
+    // before the transport and the watchdog, which it still stops; the children go in the order they came
     delete m_queue;
 }
 

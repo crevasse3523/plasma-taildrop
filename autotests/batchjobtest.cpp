@@ -12,14 +12,17 @@
 
 using namespace Qt::StringLiterals;
 
+// Short enough for the tests, and far below the one second between speed updates
+static constexpr int QuietMs = 100;
+
 class BatchJobTest : public QObject, public SendQueueFixture
 {
     Q_OBJECT
 
     // Not started yet, so that spies can be connected first
-    BatchJob *newJob(int batchId)
+    BatchJob *newJob(int batchId, int quietMs = BatchJob::QuietMs)
     {
-        return new BatchJob(m_queue, batchId, m_queue);
+        return new BatchJob(m_queue, batchId, m_queue, quietMs);
     }
 
     static QString lastInfo(const QSignalSpy &info)
@@ -33,6 +36,8 @@ class BatchJobTest : public QObject, public SendQueueFixture
             return args.at(1).toULongLong() > 0;
         });
     }
+
+    static inline const QString NotReplying = u"Device not replying, still trying…"_s;
 
 private Q_SLOTS:
     void initTestCase()
@@ -69,6 +74,19 @@ private Q_SLOTS:
         QCOMPARE(result.size(), 1);
         // how it went is for the notification
         QCOMPARE(job->error(), 0);
+    }
+
+    void quietAfterProgress()
+    {
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s, 100)});
+        BatchJob *job = newJob(id, QuietMs);
+        QSignalSpy info(job, &KJob::infoMessage);
+        QSignalSpy speed(job, &KJob::speed);
+        job->start();
+        Q_EMIT m_transport->progress(10, 100);
+        // within the first second, before any speed update
+        QTRY_COMPARE_WITH_TIMEOUT(lastInfo(info), NotReplying, 5 * QuietMs);
+        QCOMPARE(speed.last().at(1).toULongLong(), 0);
     }
 
     void waitInQueueIsNotSpeed()
@@ -121,14 +139,26 @@ private Q_SLOTS:
         QVERIFY(anySpeed(speed));
     }
 
-    void finishing()
+    void nextFileWaitsItsOwnQuiet()
+    {
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s)});
+        BatchJob *job = newJob(id, QuietMs);
+        QSignalSpy info(job, &KJob::infoMessage);
+        job->start();
+        QTRY_COMPARE(lastInfo(info), NotReplying);
+        finish(LocalApi::Outcome::Other);
+        QCOMPARE(lastInfo(info), QString());
+    }
+
+    void quietWhileFinishing()
     {
         const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s)});
-        BatchJob *job = newJob(id);
+        BatchJob *job = newJob(id, QuietMs);
         QSignalSpy info(job, &KJob::infoMessage);
         job->start();
         Q_EMIT m_transport->progress(10, 10);
         QCOMPARE(lastInfo(info), u"Finishing…"_s);
+        QTRY_COMPARE(lastInfo(info), NotReplying);
     }
 };
 
