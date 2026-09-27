@@ -3,7 +3,7 @@
 
 // Share menu entry that sends the selected files with Taildrop to the device chosen in taildropplugin_config.qml.
 // Purpose runs the job inside the sharing application, so it only checks the files and hands them over to
-// plasma-taildrop-send, which queues and uploads them and shows the progress. Windows saves received files
+// plasma-taildrop-send, which queues, packs and uploads them and shows the progress. Windows saves received files
 // in the Downloads folder of the logged-in user.
 
 #include "helperoptions.h"
@@ -43,12 +43,14 @@ private:
             fail(urlProblemText(validated.problems.first()));
             return;
         }
-        if (!validated.folders.isEmpty()) {
-            fail(i18n("Only files can be sent, not folders: %1", validated.folders.first()));
+        if (validated.files.isEmpty() && validated.folders.isEmpty()) {
+            fail(i18n("No files to send"));
             return;
         }
-        if (validated.files.isEmpty()) {
-            fail(i18n("No files to send"));
+        // the dialog asks for a format when folders are shared, and leaves it empty otherwise
+        const QString archiveFormat = data().value("archiveFormat"_L1).toString();
+        if (!validated.folders.isEmpty() && archiveFormat.isEmpty()) {
+            fail(i18n("Folders can only be sent packed into an archive: %1", validated.folders.first()));
             return;
         }
 
@@ -57,7 +59,10 @@ private:
             return u"--"_s + name + u'=' + value;
         };
         QStringList arguments{option(HelperOptions::DeviceId, device), option(HelperOptions::DeviceName, data().value("deviceName"_L1).toString())};
-        arguments << u"--"_s << validated.files;
+        if (!validated.folders.isEmpty()) {
+            arguments << option(HelperOptions::Archive, archiveFormat);
+        }
+        arguments << u"--"_s << validated.files << validated.folders;
         QString helper = qEnvironmentVariable("PLASMA_TAILDROP_HELPER");
         if (helper.isEmpty()) {
             helper = QStringLiteral(PLASMA_TAILDROP_HELPER_PATH);

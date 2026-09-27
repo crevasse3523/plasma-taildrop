@@ -31,6 +31,13 @@ void BatchJob::start()
             update();
         }
     });
+    connect(m_queue, &SendQueue::packingProgress, this, [this](int batchId, qint64 bytesPacked, qint64 bytesTotal) {
+        // packing reports every MiB, the job view shows whole percents
+        if (batchId == m_batchId && bytesTotal > 0 && int(bytesPacked * 100 / bytesTotal) != m_packedPercent) {
+            m_packedPercent = int(bytesPacked * 100 / bytesTotal);
+            update();
+        }
+    });
     connect(m_queue, &SendQueue::batchFinished, this, [this](int batchId) {
         if (batchId != m_batchId) {
             // one batch less ahead of this one
@@ -72,6 +79,7 @@ void BatchJob::update()
         return;
     }
     const qint64 sent = batch->sentBytes();
+    // an archive's size is only known once it is packed, so the total can grow
     setTotalAmount(KJob::Files, batch->items.size());
     setProcessedAmount(KJob::Files, batch->doneCount());
     setTotalAmount(KJob::Bytes, batch->totalBytes());
@@ -87,7 +95,7 @@ void BatchJob::update()
     }
 
     const auto active = std::find_if(batch->items.cbegin(), batch->items.cend(), [](const SendItem &item) {
-        return item.state == SendItem::Sending || item.state == SendItem::Finishing;
+        return item.state == SendItem::Packing || item.state == SendItem::Sending || item.state == SendItem::Finishing;
     });
     QString message;
     if (active == batch->items.cend()) {
@@ -100,20 +108,24 @@ void BatchJob::update()
     } else {
         if (active->fileName != m_file) {
             m_file = active->fileName;
+            m_packedPercent = 0;
             restartQuiet();
             Q_EMIT description(this, title(), {i18nc("The file being sent", "File"), m_file});
         }
         if (active->state != m_state) {
-            // time spent queued is no upload; from one file to the next it is
+            // time spent queued or packing is no upload; from one file to the next it is
             if (active->state == SendItem::Sending && m_state != SendItem::Finishing) {
                 m_speedClock.restart();
                 m_speedBytes = sent;
             }
-            // each step waits anew
+            // each step waits anew; packing sends nothing, which says nothing about the device
             m_state = active->state;
             restartQuiet();
         }
         switch (active->state) {
+        case SendItem::Packing:
+            message = i18nc("@info:status", "Packing… %1%", m_packedPercent);
+            break;
         case SendItem::Sending:
         case SendItem::Finishing:
             if (m_isQuiet) {

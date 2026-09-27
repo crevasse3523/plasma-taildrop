@@ -11,4 +11,6 @@ namespace Settings
 inline constexpr QLatin1StringView Name("plasma-taildrop");
 // StableID of the device the last send went to
 inline constexpr QLatin1StringView LastTargetIdKey("lastTargetId");
+// Format the Share dialog packs folders into, e.g. "tar.zst"
+inline constexpr QLatin1StringView ArchiveFormatKey("archiveFormat");
 }

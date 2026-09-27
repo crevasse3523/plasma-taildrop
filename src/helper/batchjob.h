@@ -36,6 +36,7 @@ private:
     QString m_file; // the one shown in the description
     SendItem::State m_state = SendItem::Queued; // of the item being worked on
     QString m_message; // the info message shown
+    int m_packedPercent = 0;
     bool m_killing = false;
     // no progress for a while
     QTimer m_quiet;

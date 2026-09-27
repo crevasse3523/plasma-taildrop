@@ -1,14 +1,18 @@
 // SPDX-FileCopyrightText: 2026 crevasse3523 <335460626+crevasse3523@users.noreply.github.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-// The heading of the Share dialog
+// The heading of the Share dialog and the remembered archive format
 
 #include "filesummary.h"
+#include "settings.h"
 
 #include <KLocalizedString>
 #include <QDir>
 #include <QFile>
 #include <QLocale>
+#include <QSettings>
+#include <QSignalSpy>
+#include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTest>
 
@@ -28,6 +32,7 @@ class FileSummaryTest : public QObject
 private Q_SLOTS:
     void initTestCase()
     {
+        QStandardPaths::setTestModeEnabled(true);
         KLocalizedString::setLanguages({u"en_US"_s});
         QLocale::setDefault(QLocale(QLocale::English, QLocale::UnitedStates)); // for the sizes
         QVERIFY(m_dir.isValid());
@@ -37,6 +42,11 @@ private Q_SLOTS:
             QCOMPARE(file.write(QByteArray(size, 'x')), size);
         }
         QVERIFY(QDir(m_dir.path()).mkdir(u"folder"_s));
+    }
+
+    void init()
+    {
+        QSettings(Settings::Name).clear();
     }
 
     void summarize_data()
@@ -61,6 +71,22 @@ private Q_SLOTS:
         QTEST(summary.value(u"text"_s).toString(), "text");
         QTEST(summary.value(u"hasFolders"_s).toBool(), "hasFolders");
         QTEST(!summary.value(u"problem"_s).toString().isEmpty(), "problem");
+    }
+
+    void archiveFormat()
+    {
+        FileSummary summary;
+        QVERIFY(summary.archiveFormats().contains(u"zip"_s));
+        QCOMPARE(summary.archiveFormat(), summary.archiveFormats().first());
+
+        QSignalSpy changed(&summary, &FileSummary::archiveFormatChanged);
+        summary.setArchiveFormat(u"tar.gz"_s);
+        QCOMPARE(changed.count(), 1);
+        QCOMPARE(FileSummary().archiveFormat(), u"tar.gz"_s);
+
+        // a format this build cannot write falls back to the first one
+        QSettings(Settings::Name).setValue(Settings::ArchiveFormatKey, u"rar"_s);
+        QCOMPARE(summary.archiveFormat(), summary.archiveFormats().first());
     }
 };
 

@@ -57,7 +57,7 @@ private Q_SLOTS:
 
     void amountsAndResult()
     {
-        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s, 10), file(u"a2"_s, 20)});
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s, 10), file(u"a2"_s, 20)}, {}, {});
         BatchJob *job = newJob(id);
         QSignalSpy result(job, &KJob::result);
         job->start();
@@ -78,7 +78,7 @@ private Q_SLOTS:
 
     void quietAfterProgress()
     {
-        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s, 100)});
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s, 100)}, {}, {});
         BatchJob *job = newJob(id, QuietMs);
         QSignalSpy info(job, &KJob::infoMessage);
         QSignalSpy speed(job, &KJob::speed);
@@ -89,10 +89,38 @@ private Q_SLOTS:
         QCOMPARE(speed.last().at(1).toULongLong(), 0);
     }
 
+    void samePackedNameStartsAtZero()
+    {
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {}, {m_dir.filePath(u"2024/Photos"_s), m_dir.filePath(u"2025/Photos"_s)}, u"zip"_s);
+        BatchJob *job = newJob(id);
+        QSignalSpy info(job, &KJob::infoMessage);
+        job->start();
+        Q_EMIT m_packer->progress(20, 20);
+        QCOMPARE(lastInfo(info), u"Packing… 100%"_s);
+        Q_EMIT m_packer->finished(file(u"packed.tmp"_s), {});
+        finish();
+        QCOMPARE(m_packer->folders.size(), 2);
+        QCOMPARE(lastInfo(info), u"Packing… 0%"_s);
+    }
+
+    // the speed starts when the batch starts sending, not when it is queued
+    void failedPackingStartsNextAtZero()
+    {
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {}, {m_dir.filePath(u"2024/Photos"_s), m_dir.filePath(u"2025/Photos"_s)}, u"zip"_s);
+        BatchJob *job = newJob(id);
+        QSignalSpy info(job, &KJob::infoMessage);
+        job->start();
+        Q_EMIT m_packer->progress(12, 20);
+        QCOMPARE(lastInfo(info), u"Packing… 60%"_s);
+        Q_EMIT m_packer->finished({}, u"Permission denied"_s);
+        QCOMPARE(m_packer->folders.size(), 2);
+        QCOMPARE(lastInfo(info), u"Packing… 0%"_s);
+    }
+
     void waitInQueueIsNotSpeed()
     {
-        m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s, 1000)});
-        const int id = m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s, 1000)});
+        m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s, 1000)}, {}, {});
+        const int id = m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s, 1000)}, {}, {});
         BatchJob *job = newJob(id);
         QSignalSpy speed(job, &KJob::speed);
         job->start();
@@ -105,10 +133,10 @@ private Q_SLOTS:
     // the files sent before the retry are not sent again, so they are no speed
     void retriedBatchCountsOnlyNewBytes()
     {
-        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s, 1000), file(u"a2"_s, 1000)});
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s, 1000), file(u"a2"_s, 1000)}, {}, {});
         finish();
         finish(LocalApi::Outcome::Other);
-        m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s, 1000)});
+        m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s, 1000)}, {}, {});
         m_queue->retry(id);
         BatchJob *job = newJob(id);
         QSignalSpy speed(job, &KJob::speed);
@@ -127,7 +155,7 @@ private Q_SLOTS:
     // the speed goes on from one file to the next
     void speedSpansFiles()
     {
-        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s, 1000), file(u"a2"_s, 1000)});
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s, 1000), file(u"a2"_s, 1000)}, {}, {});
         BatchJob *job = newJob(id);
         QSignalSpy speed(job, &KJob::speed);
         job->start();
@@ -141,7 +169,7 @@ private Q_SLOTS:
 
     void nextFileWaitsItsOwnQuiet()
     {
-        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s)});
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s)}, {}, {});
         BatchJob *job = newJob(id, QuietMs);
         QSignalSpy info(job, &KJob::infoMessage);
         job->start();
@@ -152,7 +180,7 @@ private Q_SLOTS:
 
     void quietWhileFinishing()
     {
-        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s)});
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s)}, {}, {});
         BatchJob *job = newJob(id, QuietMs);
         QSignalSpy info(job, &KJob::infoMessage);
         job->start();

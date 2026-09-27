@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 crevasse3523 <335460626+crevasse3523@users.noreply.github.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-// Share dialog page: what is sent and to which device.
+// Share dialog page: what is sent, how folders are packed and to which device.
 // i18nd() comes from the KLocalizedContext of the sharing application, which qmllint cannot see.
 
 pragma ComponentBehavior: Bound
@@ -24,10 +24,13 @@ ColumnLayout {
     property var device: chosen !== "" && canPick ? chosen : undefined
     // Read by Purpose: the name the job view shows for that device; defined exactly when device is
     property var deviceName: device !== undefined ? targets.nameOf(chosen) : undefined
+    // Read by Purpose: the format folders are packed into; empty when no folders are shared
+    property string archiveFormat: summary.hasFolders && packFolders ? FileSummary.archiveFormat : ""
 
     readonly property var summary: FileSummary.summarize(urls)
+    property bool packFolders: false
     property string chosen
-    readonly property bool canPick: summary.problem === "" && targets.canSend && !summary.hasFolders
+    readonly property bool canPick: summary.problem === "" && targets.canSend && (!summary.hasFolders || packFolders)
 
     TailscaleTargetsModel {
         id: targets
@@ -77,9 +80,31 @@ ColumnLayout {
 
     Kirigami.InlineMessage {
         Layout.fillWidth: true
-        type: Kirigami.MessageType.Error
+        type: Kirigami.MessageType.Information
         visible: root.summary.hasFolders
-        text: i18nd("plasma-taildrop", "Only files can be sent, not folders.") // qmllint disable unqualified
+        text: root.packFolders
+            ? i18nd("plasma-taildrop", "Each folder is sent as an archive.") // qmllint disable unqualified
+            : i18nd("plasma-taildrop", "Folders can only be sent packed into an archive. Pack them?") // qmllint disable unqualified
+        actions: Kirigami.Action {
+            icon.name: "archive-insert"
+            text: i18nd("plasma-taildrop", "Pack Folders") // qmllint disable unqualified
+            visible: !root.packFolders
+            onTriggered: root.packFolders = true
+        }
+    }
+
+    RowLayout {
+        visible: root.summary.hasFolders && root.packFolders
+
+        QQC2.Label {
+            text: i18nd("plasma-taildrop", "Archive format:") // qmllint disable unqualified
+        }
+
+        QQC2.ComboBox {
+            model: FileSummary.archiveFormats
+            currentIndex: FileSummary.archiveFormats.indexOf(FileSummary.archiveFormat)
+            onActivated: index => FileSummary.archiveFormat = FileSummary.archiveFormats[index]
+        }
     }
 
     QQC2.ScrollView {

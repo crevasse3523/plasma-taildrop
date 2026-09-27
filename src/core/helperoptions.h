@@ -13,4 +13,6 @@ namespace HelperOptions
 inline constexpr QLatin1StringView DeviceId("device-id");
 // Name of that device, as the job view and the notifications show it
 inline constexpr QLatin1StringView DeviceName("device-name");
+// Format folders are packed into, e.g. "tar.zst"
+inline constexpr QLatin1StringView Archive("archive");
 }

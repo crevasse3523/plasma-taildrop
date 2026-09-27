@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "sendservice.h"
+#include "archiver.h"
 #include "batchjob.h"
 #include "helperoptions.h"
 #include "localapitransport.h"
@@ -13,13 +14,14 @@
 #include <KUiServerV2JobTracker>
 #include <QCommandLineParser>
 #include <QDir>
+#include <QFileInfo>
 #include <QSettings>
 
 using namespace Qt::StringLiterals;
 
 SendService::SendService(QObject *parent)
     : QObject(parent)
-    , m_queue(new SendQueue(new LocalApiTransport(this), new StallTimer(this), this))
+    , m_queue(new SendQueue(new LocalApiTransport(this), new Archiver(this), new StallTimer(this), this))
     , m_notifier(new Notifier(this))
     , m_tracker(new KUiServerV2JobTracker(this))
 {
@@ -40,7 +42,7 @@ SendService::SendService(QObject *parent)
 
 SendService::~SendService()
 {
-    // before the transport and the watchdog, which it still stops; the children go in the order they came
+    // before the transport, the packer and the watchdog, which it still stops; the children go in the order they came
     delete m_queue;
 }
 
@@ -48,7 +50,8 @@ void SendService::addOptions(QCommandLineParser &parser)
 {
     parser.addOption({HelperOptions::DeviceId, i18n("StableID of the device to send to."), i18n("id")});
     parser.addOption({HelperOptions::DeviceName, i18n("Name of the device to send to."), i18n("name")});
-    parser.addPositionalArgument(u"files"_s, i18n("Files to send."), i18n("[files…]"));
+    parser.addOption({HelperOptions::Archive, i18n("Archive format for folders: %1.", Archiver::formats().join(u", "_s)), i18n("format")});
+    parser.addPositionalArgument(u"files"_s, i18n("Files and folders to send."), i18n("[files…]"));
 }
 
 void SendService::handle(const QStringList &arguments, const QString &workingDirectory)
@@ -58,18 +61,20 @@ void SendService::handle(const QStringList &arguments, const QString &workingDir
     const QDir directory(workingDirectory);
     QString stableId;
     QStringList files;
+    QStringList folders;
     if (parser.parse(arguments)) {
         stableId = parser.value(HelperOptions::DeviceId);
         const QStringList paths = parser.positionalArguments();
         for (const QString &path : paths) {
-            files.append(directory.absoluteFilePath(path));
+            const QString absolutePath = directory.absoluteFilePath(path);
+            (QFileInfo(absolutePath).isDir() ? folders : files).append(absolutePath);
         }
     }
-    if (stableId.isEmpty() || files.isEmpty()) {
+    if (stableId.isEmpty() || (files.isEmpty() && folders.isEmpty())) {
         qWarning().noquote() << "Ignoring a launch without a device or files:" << arguments.join(u' ');
     } else {
         const QString name = parser.value(HelperOptions::DeviceName);
-        track(m_queue->enqueue(stableId, name.isEmpty() ? stableId : name, files));
+        track(m_queue->enqueue(stableId, name.isEmpty() ? stableId : name, files, folders, parser.value(HelperOptions::Archive)));
     }
     updateIdle();
 }

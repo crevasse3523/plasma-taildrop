@@ -3,6 +3,7 @@
 
 #include "sendqueue.h"
 
+#include <QFile>
 #include <QFileInfo>
 #include <QTimer>
 
@@ -59,13 +60,18 @@ qsizetype SendBatch::doneCount() const
     });
 }
 
-SendQueue::SendQueue(Transport *transport, Watchdog *watchdog, QObject *parent)
+SendQueue::SendQueue(Transport *transport, Packer *packer, Watchdog *watchdog, QObject *parent)
     : QObject(parent)
     , m_transport(transport)
+    , m_packer(packer)
     , m_watchdog(watchdog)
 {
     connect(m_transport, &Transport::progress, this, &SendQueue::onProgress);
     connect(m_transport, &Transport::finished, this, &SendQueue::onSent);
+    connect(m_packer, &Packer::progress, this, [this](qint64 bytesPacked, qint64 bytesTotal) {
+        Q_EMIT packingProgress(m_activeBatch, bytesPacked, bytesTotal);
+    });
+    connect(m_packer, &Packer::finished, this, &SendQueue::onPacked);
     connect(m_watchdog, &Watchdog::expired, this, [this] {
         m_transport->abort();
         const int batchId = m_activeBatch;
@@ -83,20 +89,33 @@ SendQueue::~SendQueue()
     }
     // no signals from here on: whoever listens may already be gone
     disconnect(m_transport, nullptr, this, nullptr);
+    disconnect(m_packer, nullptr, this, nullptr);
     stopActive();
+    const QString archivePath = activeItem().archivePath;
+    if (!archivePath.isEmpty()) {
+        QFile::remove(archivePath);
+    }
 }
 
-int SendQueue::enqueue(const QString &stableId, const QString &deviceName, const QStringList &files)
+int SendQueue::enqueue(const QString &stableId, const QString &deviceName, const QStringList &files, const QStringList &folders, const QString &archiveFormat)
 {
     SendBatch batch;
     batch.id = m_nextId++;
     batch.stableId = stableId;
     batch.deviceName = deviceName;
+    batch.archiveFormat = archiveFormat;
     for (const QString &file : files) {
         SendItem item;
         item.path = file;
         item.fileName = QFileInfo(file).fileName();
         item.size = QFileInfo(file).size();
+        batch.items.append(item);
+    }
+    for (const QString &folder : folders) {
+        SendItem item;
+        item.path = folder;
+        item.fileName = QFileInfo(folder).fileName() + u'.' + archiveFormat;
+        item.folder = true;
         batch.items.append(item);
     }
     m_batches.append(batch);
@@ -133,6 +152,9 @@ void SendQueue::retry(int batchId)
             item.failure = SendItem::NoFailure;
             item.errorString.clear();
             item.sent = 0;
+            if (item.folder) {
+                item.size = 0;
+            }
             retried = true;
         }
     }
@@ -206,6 +228,14 @@ void SendQueue::startNext()
         if (m_activeIndex < 0) {
             return;
         }
+        const SendBatch *batch = find(m_activeBatch);
+        SendItem &item = activeItem();
+        if (item.folder) {
+            item.state = SendItem::Packing;
+            m_packer->pack(item.path, batch->archiveFormat);
+            Q_EMIT batchChanged(m_activeBatch);
+            return;
+        }
         // ends the item at once when the file cannot be read; then the loop goes on with the next one
         upload();
     }
@@ -216,7 +246,8 @@ void SendQueue::upload()
     const SendBatch *batch = find(m_activeBatch);
     SendItem &item = activeItem();
     QString errorString;
-    if (!m_transport->send(batch->stableId, item.path, item.fileName, &errorString)) {
+    const QString path = item.folder ? item.archivePath : item.path;
+    if (!m_transport->send(batch->stableId, path, item.fileName, &errorString)) {
         const int batchId = m_activeBatch;
         endActive(SendItem::Failed, SendItem::FileError, errorString);
         finishIfDone(batchId);
@@ -229,13 +260,21 @@ void SendQueue::upload()
 
 void SendQueue::stopActive()
 {
-    m_transport->abort();
+    if (activeItem().state == SendItem::Packing) {
+        m_packer->cancel();
+    } else {
+        m_transport->abort();
+    }
 }
 
 void SendQueue::endActive(SendItem::State state, SendItem::Failure failure, const QString &errorString)
 {
     SendItem &item = activeItem();
     m_watchdog->stop();
+    if (!item.archivePath.isEmpty()) {
+        QFile::remove(item.archivePath);
+        item.archivePath.clear();
+    }
     item.state = state;
     item.failure = failure;
     item.errorString = errorString;
@@ -266,6 +305,24 @@ void SendQueue::finishIfDone(int batchId)
     if (find(batchId)->isFinished()) {
         Q_EMIT batchFinished(batchId);
     }
+}
+
+void SendQueue::onPacked(const QString &archivePath, const QString &errorString)
+{
+    if (m_activeIndex < 0) {
+        return;
+    }
+    if (archivePath.isEmpty()) {
+        const int batchId = m_activeBatch;
+        endActive(SendItem::Failed, SendItem::FileError, errorString);
+        finishIfDone(batchId);
+    } else {
+        SendItem &item = activeItem();
+        item.archivePath = archivePath;
+        item.size = QFileInfo(archivePath).size();
+        upload();
+    }
+    startNext();
 }
 
 void SendQueue::onProgress(qint64 bytesSent, qint64 bytesTotal)

@@ -24,7 +24,7 @@ public:
     explicit SendService(QObject *parent = nullptr);
     ~SendService() override;
 
-    // The options of the command line: --device-id=ID [--device-name=NAME] -- FILE...
+    // The options of the command line: --device-id=ID [--device-name=NAME] [--archive=FORMAT] -- FILE...
     static void addOptions(QCommandLineParser &parser);
 
     // Queues what a launch asks for; arguments starts with the program, relative paths are in workingDirectory

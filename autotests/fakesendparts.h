@@ -39,6 +39,25 @@ public:
     }
 };
 
+class FakePacker : public Packer
+{
+public:
+    QStringList folders;
+    QStringList formats;
+    int cancels = 0;
+
+    void pack(const QString &folder, const QString &format) override
+    {
+        folders.append(folder);
+        formats.append(format);
+    }
+
+    void cancel() override
+    {
+        ++cancels;
+    }
+};
+
 class FakeWatchdog : public Watchdog
 {
 public:
@@ -63,6 +82,7 @@ class SendQueueFixture
 protected:
     QTemporaryDir m_dir;
     FakeTransport *m_transport = nullptr;
+    FakePacker *m_packer = nullptr;
     FakeWatchdog *m_watchdog = nullptr;
     SendQueue *m_queue = nullptr;
 
@@ -72,14 +92,16 @@ protected:
             qFatal("no temporary folder");
         }
         m_transport = new FakeTransport;
+        m_packer = new FakePacker;
         m_watchdog = new FakeWatchdog;
-        m_queue = new SendQueue(m_transport, m_watchdog);
+        m_queue = new SendQueue(m_transport, m_packer, m_watchdog);
     }
 
     void cleanupQueue()
     {
         delete m_queue;
         delete m_watchdog;
+        delete m_packer;
         delete m_transport;
     }
 

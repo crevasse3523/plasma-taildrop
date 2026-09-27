@@ -6,6 +6,7 @@ ecm_add_qml_module(plasmataildropqml URI "org.crevasse3523.plasmataildrop" GENER
 target_sources(plasmataildropqml PRIVATE
     filesummary.h filesummary.cpp
     tailscaletargets.h tailscaletargets.cpp)
+# sendcore for Archiver::formats(), the formats the helper can pack folders into
 target_link_libraries(plasmataildropqml PRIVATE
-    tailscalecore Qt6::Core Qt6::Network Qt6::Qml KF6::CoreAddons KF6::I18n)
+    tailscalecore sendcore Qt6::Core Qt6::Network Qt6::Qml KF6::CoreAddons KF6::I18n)
 ecm_finalize_qml_module(plasmataildropqml DESTINATION ${KDE_INSTALL_QMLDIR})

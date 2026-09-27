@@ -21,7 +21,7 @@ struct UrlProblem {
 
 struct ValidatedUrls {
     QStringList files; // absolute paths of readable regular files, in the order given
-    QStringList folders; // absolute paths of readable folders
+    QStringList folders; // absolute paths of readable folders, which have to be archived before sending
     qint64 totalBytes = 0; // size of files; folders are not counted
     QList<UrlProblem> problems;
 };

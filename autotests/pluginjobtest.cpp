@@ -65,13 +65,13 @@ class PluginJobTest : public QObject
         return QString::fromUtf8(file.readAll()).split(u'\n', Qt::SkipEmptyParts);
     }
 
-    static QJsonObject share(const QString &device, const QStringList &paths)
+    static QJsonObject share(const QString &device, const QStringList &paths, const QString &archiveFormat = {})
     {
         QJsonArray urls;
         for (const QString &path : paths) {
             urls.append(path.contains(u':') ? path : QUrl::fromLocalFile(path).toString());
         }
-        return {{u"device"_s, device}, {u"deviceName"_s, u"alpha"_s}, {u"urls"_s, urls}};
+        return {{u"device"_s, device}, {u"deviceName"_s, u"alpha"_s}, {u"urls"_s, urls}, {u"archiveFormat"_s, archiveFormat}};
     }
 
 private Q_SLOTS:
@@ -109,18 +109,28 @@ private Q_SLOTS:
         const QString first = makeFile(u"zażółć gęślą.txt"_s);
         const QString second = makeFile(u"b.txt"_s);
         QCOMPARE(run(share(u"nA"_s, {first, second, first})), QString());
-        // each file once
+        // no archive format without folders; each file once
         QCOMPARE(helperArguments(), QStringList({u"--device-id=nA"_s, u"--device-name=alpha"_s, u"--"_s, first, second}));
+    }
+
+    void folders()
+    {
+        const QString file = makeFile(u"a.txt"_s);
+        QVERIFY(QDir(m_dir.path()).mkpath(u"folder one"_s));
+        const QString folder = m_dir.filePath(u"folder one"_s);
+        QCOMPARE(run(share(u"nA"_s, {folder, file}, u"tar.zst"_s)), QString());
+        QCOMPARE(helperArguments(), QStringList({u"--device-id=nA"_s, u"--device-name=alpha"_s, u"--archive=tar.zst"_s, u"--"_s, file, folder}));
     }
 
     // QGuiApplication takes options such as -platform from anywhere in its argv, even after --
     void optionLikeValues()
     {
         const QString file = makeFile(u"a.txt"_s);
-        QJsonObject data = share(u"-platform"_s, {file});
+        QJsonObject data = share(u"-platform"_s, {m_dir.path(), file}, u"-reverse"_s);
         data[u"deviceName"_s] = u"-session"_s;
         QCOMPARE(run(data), QString());
-        QCOMPARE(helperArguments(), QStringList({u"--device-id=-platform"_s, u"--device-name=-session"_s, u"--"_s, file}));
+        QCOMPARE(helperArguments(),
+                 QStringList({u"--device-id=-platform"_s, u"--device-name=-session"_s, u"--archive=-reverse"_s, u"--"_s, file, m_dir.path()}));
     }
 
     // the helper outlives the sharing application and must not keep its directory, e.g. on a USB stick, busy
@@ -171,7 +181,7 @@ private Q_SLOTS:
         QTest::newRow("nothing") << share(u"nA"_s, {}) << u"No files to send"_s;
         QTest::newRow("remote") << share(u"nA"_s, {u"https://example.org/a.txt"_s}) << u"Only local files can be sent: https://example.org/a.txt"_s;
         QTest::newRow("missing") << share(u"nA"_s, {file, m_dir.filePath(u"gone.txt"_s)}) << m_dir.filePath(u"gone.txt"_s) + u" does not exist"_s;
-        QTest::newRow("folder") << share(u"nA"_s, {file, m_dir.path()}) << u"Only files can be sent, not folders: "_s + m_dir.path();
+        QTest::newRow("folder without format") << share(u"nA"_s, {file, m_dir.path()}) << u"Folders can only be sent packed into an archive: "_s + m_dir.path();
     }
 
     void refused()

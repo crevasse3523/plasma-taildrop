@@ -16,7 +16,8 @@
     "X-Purpose-ActionDisplay": "Send via Tailscale…",
     "X-Purpose-Configuration": [
         "device",
-        "deviceName"
+        "deviceName",
+        "archiveFormat"
     ],
     "X-Purpose-PluginTypes": [
         "Export"

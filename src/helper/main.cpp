@@ -5,6 +5,7 @@
 // the dialog closed and even after the application that shared them quit. Only one runs: later launches pass their
 // files to it and exit, so everything shared goes through one queue.
 
+#include "archiver.h"
 #include "sendservice.h"
 
 #include <KAboutData>
@@ -45,6 +46,10 @@ int main(int argc, char **argv)
 
     // without a session bus every launch sends on its own
     KDBusService service(KDBusService::Unique | KDBusService::NoExitOnFailure);
+    // only the single instance knows that no other one is still sending from the cache
+    if (service.isRegistered()) {
+        Archiver::removeLeftovers();
+    }
     SendService sender;
     QObject::connect(&service, &KDBusService::activateRequested, &sender, &SendService::handle);
     QObject::connect(&sender, &SendService::idle, &service, [&service, &sender] {

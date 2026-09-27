@@ -43,8 +43,8 @@ private Q_SLOTS:
     void firstComeFirstServed()
     {
         QSignalSpy finished(m_queue, &SendQueue::batchFinished);
-        const int first = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s)});
-        const int second = m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s)});
+        const int first = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s)}, {}, {});
+        const int second = m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s)}, {}, {});
         QVERIFY(m_queue->isBusy());
         QCOMPARE(sentNames(), QStringList{u"a1"_s});
         QCOMPARE(m_transport->sends.first().stableId, u"nA"_s);
@@ -74,7 +74,7 @@ private Q_SLOTS:
 
     void totals()
     {
-        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"small"_s, 10), file(u"big"_s, 1000)});
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"small"_s, 10), file(u"big"_s, 1000)}, {}, {});
         const SendBatch *batch = m_queue->batch(id);
         QCOMPARE(batch->deviceName, u"alpha"_s);
         QCOMPARE(batch->totalBytes(), 1010);
@@ -91,7 +91,7 @@ private Q_SLOTS:
     // the file grew between the share and its send
     void sizeAtSend()
     {
-        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s, 10)});
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s, 10)}, {}, {});
         const SendBatch *batch = m_queue->batch(id);
         Q_EMIT m_transport->progress(30, 30);
         QCOMPARE(batch->totalBytes(), 30);
@@ -105,7 +105,7 @@ private Q_SLOTS:
     {
         const QString broken = file(u"broken"_s);
         m_transport->unreadable = {broken};
-        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {broken, file(u"good"_s)});
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {broken, file(u"good"_s)}, {}, {});
         QCOMPARE(item(id, 0).state, SendItem::Failed);
         QCOMPARE(item(id, 0).failure, SendItem::FileError);
         QCOMPARE(item(id, 0).errorString, u"Permission denied"_s);
@@ -121,18 +121,18 @@ private Q_SLOTS:
         QSignalSpy finished(m_queue, &SendQueue::batchFinished);
         const QString broken = file(u"broken"_s);
         m_transport->unreadable = {broken};
-        const int first = m_queue->enqueue(u"nA"_s, u"alpha"_s, {broken});
+        const int first = m_queue->enqueue(u"nA"_s, u"alpha"_s, {broken}, {}, {});
         QCOMPARE(finished.size(), 1);
         QCOMPARE(finished.first().first().toInt(), first);
         QVERIFY(m_queue->batch(first)->isFinished());
         // the next batch is not held up
-        m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s)});
+        m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s)}, {}, {});
         QCOMPARE(sentNames(), QStringList{u"b1"_s});
     }
 
     void fileRejectedByDeviceIsSkipped()
     {
-        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s)});
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s)}, {}, {});
         finish(LocalApi::Outcome::Other, u"invalid filename"_s);
         QCOMPARE(item(id, 0).failure, SendItem::Other);
         QCOMPARE(item(id, 0).errorString, u"invalid filename"_s);
@@ -154,8 +154,8 @@ private Q_SLOTS:
         QFETCH(LocalApi::Outcome, outcome);
         QFETCH(SendItem::Failure, failure);
         QSignalSpy finished(m_queue, &SendQueue::batchFinished);
-        const int first = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s), file(u"a3"_s)});
-        m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s)});
+        const int first = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s), file(u"a3"_s)}, {}, {});
+        m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s)}, {}, {});
         finish(outcome, u"no"_s);
         QCOMPARE(item(first, 0).state, SendItem::Failed);
         QCOMPARE(item(first, 0).failure, failure);
@@ -172,7 +172,7 @@ private Q_SLOTS:
     void deviceRefusalStopsBatch()
     {
         QSignalSpy finished(m_queue, &SendQueue::batchFinished);
-        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s), file(u"a3"_s)});
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s)}, {m_dir.filePath(u"folder"_s)}, u"zip"_s);
         finish(LocalApi::Outcome::DeviceRefused, u"Taildrop disabled; no storage directory"_s);
         QCOMPARE(item(id, 0).state, SendItem::Failed);
         QCOMPARE(item(id, 0).failure, SendItem::Other);
@@ -182,13 +182,14 @@ private Q_SLOTS:
             QCOMPARE(item(id, index).failure, SendItem::NotSent);
         }
         QCOMPARE(sentNames(), QStringList{u"a1"_s});
+        QVERIFY(m_packer->folders.isEmpty());
         QCOMPARE(finished.size(), 1);
     }
 
     void progressAndFinishing()
     {
         QSignalSpy changed(m_queue, &SendQueue::batchChanged);
-        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s, 100)});
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s, 100)}, {}, {});
         QVERIFY(m_watchdog->active);
         const int restarts = m_watchdog->restarts;
         changed.clear();
@@ -217,8 +218,8 @@ private Q_SLOTS:
 
     void stallFailsBatch()
     {
-        const int first = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s)});
-        m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s)});
+        const int first = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s)}, {}, {});
+        m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s)}, {}, {});
         Q_EMIT m_transport->progress(5, 10);
         Q_EMIT m_watchdog->expired();
         QCOMPARE(m_transport->aborts, 1);
@@ -232,8 +233,8 @@ private Q_SLOTS:
     void cancelActiveBatch()
     {
         QSignalSpy finished(m_queue, &SendQueue::batchFinished);
-        const int first = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s)});
-        const int second = m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s)});
+        const int first = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s)}, {}, {});
+        const int second = m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s)}, {}, {});
         finish();
         m_queue->cancel(first);
         QCOMPARE(m_transport->aborts, 1);
@@ -252,9 +253,9 @@ private Q_SLOTS:
 
     void cancelQueuedBatch()
     {
-        const int first = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s)});
-        const int second = m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s)});
-        const int third = m_queue->enqueue(u"nC"_s, u"gamma"_s, {file(u"c1"_s)});
+        const int first = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s)}, {}, {});
+        const int second = m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s)}, {}, {});
+        const int third = m_queue->enqueue(u"nC"_s, u"gamma"_s, {file(u"c1"_s)}, {}, {});
         m_queue->cancel(second);
         QCOMPARE(m_transport->aborts, 0);
         QCOMPARE(item(first, 0).state, SendItem::Sending);
@@ -266,8 +267,8 @@ private Q_SLOTS:
 
     void retryOnlyWhatFailed()
     {
-        const int first = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s), file(u"a3"_s)});
-        const int second = m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s)});
+        const int first = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s), file(u"a2"_s), file(u"a3"_s)}, {}, {});
+        const int second = m_queue->enqueue(u"nB"_s, u"beta"_s, {file(u"b1"_s)}, {}, {});
         finish();
         Q_EMIT m_transport->progress(3, 10);
         finish(LocalApi::Outcome::PeerUnreachable);
@@ -296,7 +297,7 @@ private Q_SLOTS:
 
     void retryNeedsFinishedBatch()
     {
-        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s)});
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s)}, {}, {});
         m_queue->retry(id);
         QCOMPARE(item(id, 0).state, SendItem::Sending);
         QCOMPARE(m_transport->sends.size(), 1);
@@ -304,13 +305,90 @@ private Q_SLOTS:
 
     void forget()
     {
-        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s)});
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s)}, {}, {});
         m_queue->forget(id);
         QVERIFY(m_queue->batch(id));
         finish();
         m_queue->forget(id);
         QVERIFY(!m_queue->batch(id));
         QVERIFY(!m_queue->isBusy());
+    }
+
+    void folderIsPackedThenSent()
+    {
+        QSignalSpy packing(m_queue, &SendQueue::packingProgress);
+        const QString folder = m_dir.filePath(u"Zdjęcia z wakacji"_s);
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {file(u"a1"_s)}, {folder}, u"tar.zst"_s);
+        QCOMPARE(item(id, 1).fileName, u"Zdjęcia z wakacji.tar.zst"_s);
+        QVERIFY(item(id, 1).folder);
+        QCOMPARE(item(id, 1).size, 0);
+        finish();
+        QCOMPARE(m_packer->folders, QStringList{folder});
+        QCOMPARE(m_packer->formats, QStringList{u"tar.zst"_s});
+        QCOMPARE(item(id, 1).state, SendItem::Packing);
+        QVERIFY(!m_watchdog->active);
+
+        Q_EMIT m_packer->progress(5, 20);
+        QCOMPARE(packing.size(), 1);
+        QCOMPARE(packing.first(), (QVariantList{id, qint64(5), qint64(20)}));
+
+        const QString archive = file(u"packed.tmp"_s, 123);
+        Q_EMIT m_packer->finished(archive, {});
+        QCOMPARE(item(id, 1).state, SendItem::Sending);
+        QCOMPARE(item(id, 1).size, 123);
+        QCOMPARE(m_transport->sends.last().filePath, archive);
+        QCOMPARE(m_transport->sends.last().fileName, u"Zdjęcia z wakacji.tar.zst"_s);
+
+        finish();
+        QCOMPARE(item(id, 1).state, SendItem::Done);
+        QVERIFY(!QFile::exists(archive));
+    }
+
+    void archiveRemovedOnFailure()
+    {
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {}, {m_dir.filePath(u"folder"_s)}, u"zip"_s);
+        const QString archive = file(u"packed.tmp"_s);
+        Q_EMIT m_packer->finished(archive, {});
+        finish(LocalApi::Outcome::PeerUnreachable);
+        QVERIFY(!QFile::exists(archive));
+        QCOMPARE(item(id, 0).failure, SendItem::PeerUnreachable);
+
+        // a retry packs the folder again
+        m_queue->retry(id);
+        QCOMPARE(m_packer->folders.size(), 2);
+        QCOMPARE(item(id, 0).size, 0);
+    }
+
+    void packingFailureIsSkipped()
+    {
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {}, {m_dir.filePath(u"f1"_s), m_dir.filePath(u"f2"_s)}, u"zip"_s);
+        Q_EMIT m_packer->finished({}, u"Could not read secret"_s);
+        QCOMPARE(item(id, 0).state, SendItem::Failed);
+        QCOMPARE(item(id, 0).failure, SendItem::FileError);
+        QCOMPARE(item(id, 0).errorString, u"Could not read secret"_s);
+        QCOMPARE(item(id, 1).state, SendItem::Packing);
+        QCOMPARE(m_packer->folders.size(), 2);
+    }
+
+    void cancelWhilePacking()
+    {
+        const int id = m_queue->enqueue(u"nA"_s, u"alpha"_s, {}, {m_dir.filePath(u"folder"_s)}, u"zip"_s);
+        m_queue->cancel(id);
+        QCOMPARE(m_packer->cancels, 1);
+        QCOMPARE(m_transport->aborts, 0);
+        QCOMPARE(item(id, 0).state, SendItem::Cancelled);
+        QVERIFY(!m_queue->isBusy());
+    }
+
+    void destroyWhileSendingArchive()
+    {
+        m_queue->enqueue(u"nA"_s, u"alpha"_s, {}, {m_dir.filePath(u"folder"_s)}, u"zip"_s);
+        const QString archive = file(u"packed.tmp"_s);
+        Q_EMIT m_packer->finished(archive, {});
+        delete m_queue;
+        m_queue = nullptr;
+        QCOMPARE(m_transport->aborts, 1);
+        QVERIFY(!QFile::exists(archive));
     }
 };
 

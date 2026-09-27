@@ -2,9 +2,12 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "filesummary.h"
+#include "archiver.h"
+#include "settings.h"
 #include "urlproblemtext.h"
 
 #include <KFormat>
+#include <QSettings>
 
 using namespace Qt::StringLiterals;
 
@@ -28,4 +31,24 @@ QVariantMap FileSummary::summarize(const QStringList &urls) const
         {u"hasFolders"_s, folders != 0},
         {u"problem"_s, validated.problems.isEmpty() ? QString() : urlProblemText(validated.problems.first())},
     };
+}
+
+QStringList FileSummary::archiveFormats() const
+{
+    return Archiver::formats();
+}
+
+QString FileSummary::archiveFormat() const
+{
+    const QString format = QSettings(Settings::Name).value(Settings::ArchiveFormatKey).toString();
+    const QStringList formats = archiveFormats();
+    return formats.contains(format) ? format : formats.value(0);
+}
+
+void FileSummary::setArchiveFormat(const QString &format)
+{
+    if (format != archiveFormat()) {
+        QSettings(Settings::Name).setValue(Settings::ArchiveFormatKey, format);
+        Q_EMIT archiveFormatChanged();
+    }
 }

@@ -6,7 +6,7 @@ include(ECMAddTests)
 
 ecm_add_tests(targetstest.cpp filestest.cpp localapitest.cpp
     LINK_LIBRARIES tailscalecore Qt6::Test)
-ecm_add_tests(sendqueuetest.cpp batchjobtest.cpp localapitransporttest.cpp
+ecm_add_tests(sendqueuetest.cpp batchjobtest.cpp archivertest.cpp localapitransporttest.cpp
     LINK_LIBRARIES sendcore Qt6::Test)
 # the notifier is part of the helper executable, not of sendcore
 ecm_add_test(notifiertest.cpp ../src/helper/notifier.cpp
@@ -20,7 +20,7 @@ ecm_add_test(targetsmodeltest.cpp ../src/qml/tailscaletargets.cpp
 target_include_directories(targetsmodeltest PRIVATE ../src/qml)
 ecm_add_test(filesummarytest.cpp ../src/qml/filesummary.cpp
     TEST_NAME filesummarytest
-    LINK_LIBRARIES tailscalecore Qt6::Qml Qt6::Test KF6::CoreAddons KF6::I18n)
+    LINK_LIBRARIES sendcore Qt6::Qml Qt6::Test KF6::CoreAddons KF6::I18n)
 target_include_directories(filesummarytest PRIVATE ../src/qml)
 
 # Loads the built plugin; PLASMA_TAILDROP_HELPER points it at a stub
