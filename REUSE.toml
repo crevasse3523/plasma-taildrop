@@ -7,6 +7,7 @@ version = 1
 [[annotations]]
 path = [
     "**.md",
+    "debian/**",
     "src/fileitemaction/taildropfileitemaction.json.in",
     "src/plugin/taildropplugin.json.in",
 ]

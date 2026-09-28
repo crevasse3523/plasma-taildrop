@@ -8,3 +8,17 @@
 /.cache/
 compile_commands.json
 *.user
+# dpkg-buildpackage
+/obj-*/
+/debian/.debhelper/
+/debian/plasma-taildrop/
+/debian/files
+/debian/*.substvars
+/debian/debhelper-build-stamp
+/debian/*.debhelper.log
+/debian/*.debhelper
+/debian/tmp/
+*.deb
+*.changes
+*.buildinfo
+SHA256SUMS

@@ -1,0 +1,57 @@
+#!/bin/sh
+# SPDX-FileCopyrightText: 2026 crevasse3523 <335460626+crevasse3523@users.noreply.github.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+# Checks that the installed package is complete and that its programs load. Nothing is sent: the QML model is pointed
+# at a socket that does not exist. SMOKE_ROOT runs the test against an unpacked .deb instead of the installed one.
+set -eu
+
+root=${SMOKE_ROOT:-}
+qmldir=$(echo "$root"/usr/lib/*/qt6/qml)
+helper=$(echo "$root"/usr/lib/*/libexec/plasma-taildrop-send)
+
+for f in \
+    "$root"/usr/lib/*/qt6/plugins/kf6/purpose/taildropplugin.so \
+    "$root"/usr/lib/*/qt6/plugins/kf6/kfileitemaction/taildropfileitemaction.so \
+    "$root"/usr/share/kf6/purpose/taildropplugin_config.qml \
+    "$qmldir"/org/crevasse3523/plasmataildrop/qmldir \
+    "$helper" \
+    "$root"/usr/share/applications/org.crevasse3523.plasma_taildrop_send.desktop \
+    "$root"/usr/share/knotifications6/plasma-taildrop.notifyrc \
+    "$root"/usr/share/metainfo/org.crevasse3523.plasma_taildrop.metainfo.xml \
+    "$root"/usr/share/locale/pl/LC_MESSAGES/plasma-taildrop.mo; do
+    test -e "$f" || { echo "missing: $f" >&2; exit 1; }
+done
+
+export QT_QPA_PLATFORM=offscreen
+"$helper" --version | grep -q '^plasma-taildrop-send [0-9]'
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+cat > "$work/tst_import.qml" <<'QML'
+import QtQuick
+import QtTest
+import org.crevasse3523.plasmataildrop
+// Purpose's own Share dialog, which our Share entry and folder menu open, needs it
+import org.kde.purpose
+
+TestCase {
+    name: "Import"
+
+    TailscaleTargetsModel {
+        id: targets
+    }
+
+    function test_archiveFormats() {
+        verify(FileSummary.archiveFormats.indexOf("zip") >= 0)
+    }
+
+    function test_noDaemon() {
+        tryVerify(() => !targets.loading)
+        verify(targets.error !== "")
+        verify(!targets.canSend)
+    }
+}
+QML
+PLASMA_TAILDROP_SOCKET="$work/missing.sock" HOME="$work" XDG_CONFIG_HOME="$work" \
+    /usr/lib/qt6/bin/qmltestrunner -import "$qmldir" -input "$work/tst_import.qml"

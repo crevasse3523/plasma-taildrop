@@ -1,0 +1,47 @@
+Source: plasma-taildrop
+Section: kde
+Priority: optional
+Maintainer: crevasse3523 <335460626+crevasse3523@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13),
+               appstream <!nocheck>,
+               cmake,
+               extra-cmake-modules,
+               gettext,
+               libkf6archive-dev,
+               libkf6coreaddons-dev,
+               libkf6dbusaddons-dev,
+               libkf6i18n-dev,
+               libkf6jobwidgets-dev,
+               libkf6kio-dev,
+               libkf6notifications-dev,
+               libkf6purpose-dev,
+               qt6-base-dev (>= 6.8),
+               qt6-declarative-dev,
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+Homepage: https://github.com/crevasse3523/plasma-taildrop
+Vcs-Browser: https://github.com/crevasse3523/plasma-taildrop
+Vcs-Git: https://github.com/crevasse3523/plasma-taildrop.git
+
+Package: plasma-taildrop
+Architecture: any
+Depends: libkf6purpose-bin,
+         qml6-module-org-kde-kirigami,
+         qml6-module-org-kde-purpose,
+         qml6-module-qtquick,
+         qml6-module-qtquick-controls,
+         qml6-module-qtquick-layouts,
+         ${misc:Depends},
+         ${shlibs:Depends},
+Recommends: tailscale,
+Description: Send files to Tailscale devices from the KDE Share menu
+ A KDE Purpose plugin that adds "Send via Tailscale…" to the Share menu of
+ Dolphin, Gwenview, Spectacle and other KDE applications, and to the Dolphin
+ context menu of folders. It sends the selected files to a device in your
+ tailnet with Taildrop.
+ .
+ Sending happens in the background, in one queue for all applications: the
+ transfer shows its progress in Plasma and can be cancelled there, and a
+ notification reports the result with a Retry action. Folders are packed
+ into an archive before they are sent. The Share dialog shows whether each
+ device is reached directly or through a relay.

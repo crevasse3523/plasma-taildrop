@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+SPDX-FileCopyrightText: 2026 crevasse3523 <335460626+crevasse3523@users.noreply.github.com>
+SPDX-License-Identifier: CC0-1.0
+-->
+<component type="addon">
+  <id>org.crevasse3523.plasma_taildrop</id>
+  <extends>org.kde.dolphin.desktop</extends>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-2.0-or-later</project_license>
+  <name>Send via Tailscale</name>
+  <name xml:lang="pl">Wysyłanie przez Tailscale</name>
+  <summary>Send files and folders to the devices of your tailnet with Taildrop</summary>
+  <summary xml:lang="pl">Wysyłaj pliki i foldery do urządzeń w swoim tailnecie przez Taildrop</summary>
+  <description>
+    <p>Adds "Send via Tailscale…" to the Share menu of Dolphin and other KDE applications. Folders get the same entry in the Dolphin context menu. Shares are queued and uploaded one at a time through tailscaled, with their progress shown by Plasma; folders are packed into an archive first.</p>
+    <p xml:lang="pl">Dodaje „Wyślij przez Tailscale…” do menu Udostępnij w Dolphinie i innych programach KDE. Foldery mają tę samą pozycję w menu kontekstowym Dolphina. Udostępnione pliki trafiają do kolejki i są wysyłane po kolei przez tailscaled, a postęp pokazuje Plasma; foldery są najpierw pakowane do archiwum.</p>
+  </description>
+  <developer id="org.crevasse3523">
+    <name>crevasse3523</name>
+  </developer>
+  <url type="homepage">https://github.com/crevasse3523/plasma-taildrop</url>
+  <url type="bugtracker">https://github.com/crevasse3523/plasma-taildrop/issues</url>
+</component>

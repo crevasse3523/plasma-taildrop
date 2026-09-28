@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+%:
+	dh $@ --buildsystem=cmake
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		-DBUILD_TESTING=$(if $(filter nocheck,$(DEB_BUILD_OPTIONS)),OFF,ON) \
+		-DINSTALL_GIT_HOOKS=OFF
+
+# The tests create QML types and a QGuiApplication, and a build has no display
+override_dh_auto_test:
+	QT_QPA_PLATFORM=offscreen dh_auto_test

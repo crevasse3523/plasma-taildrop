@@ -28,6 +28,15 @@ cmake --build build --target clang-format
 reuse lint
 ```
 
+### Debian package
+
+```sh
+sudo apt build-dep ./
+dpkg-buildpackage -us -uc -b
+```
+
+`scripts/release.sh X.Y.Z` sets the version, opens `debian/changelog` for the notes, commits and tags `vX.Y.Z`.
+
 ## License
 
 [GPL-2.0-or-later](LICENSE).
