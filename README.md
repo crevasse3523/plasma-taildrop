@@ -1,8 +1,9 @@
 # plasma-taildrop
 
 A KDE [Purpose](https://invent.kde.org/frameworks/purpose) plugin that adds **Send via Tailscale…** to the
-Share menu of Dolphin, Gwenview, Spectacle and other KDE apps. It sends the selected files to a device in your
-tailnet with [Taildrop](https://tailscale.com/kb/1106/taildrop), talking directly to the local `tailscaled`.
+Share menu of Dolphin, Gwenview, Spectacle and other KDE apps, and to the Dolphin context menu of folders. It sends
+the selected files to a device in your tailnet with [Taildrop](https://tailscale.com/kb/1106/taildrop), talking
+directly to the local `tailscaled`.
 
 Your user must be the Tailscale operator to send files: `sudo tailscale set --operator=$USER`.
 

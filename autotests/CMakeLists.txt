@@ -30,3 +30,11 @@ ecm_add_test(pluginjobtest.cpp
 target_compile_definitions(pluginjobtest PRIVATE PLUGIN_PATH="$<TARGET_FILE:taildropplugin>")
 add_dependencies(pluginjobtest taildropplugin)
 
+# Loads the built plugin; it finds the built Purpose plugin in the plugin directory of the build
+ecm_add_test(fileitemactiontest.cpp
+    TEST_NAME fileitemactiontest
+    LINK_LIBRARIES Qt6::Test KF6::CoreAddons KF6::I18n KF6::KIOWidgets)
+target_compile_definitions(fileitemactiontest PRIVATE
+    PLUGIN_PATH="$<TARGET_FILE:taildropfileitemaction>"
+    PLUGIN_DIR="$<TARGET_FILE_DIR:taildropplugin>/../..")
+add_dependencies(fileitemactiontest taildropfileitemaction taildropplugin)

@@ -23,13 +23,14 @@ include(FeatureSummary)
 # Gui: KF6::Purpose links it without looking it up itself
 # 6.8: QNetworkRequest::FullLocalServerNameAttribute, for HTTP over the tailscaled unix socket
 find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Qml Network Concurrent)
-find_package(KF6 6.0 REQUIRED COMPONENTS Archive CoreAddons DBusAddons I18n JobWidgets Notifications Purpose)
+find_package(KF6 6.0 REQUIRED COMPONENTS Archive CoreAddons DBusAddons I18n JobWidgets KIO Notifications Purpose)
 
 add_compile_definitions(TRANSLATION_DOMAIN="plasma-taildrop")
 # Name of the desktop entry of plasma-taildrop-send, which gives the job view and the notifications its name and icon
 set(HELPER_DESKTOP_ID org.crevasse3523.plasma_taildrop_send)
 
 add_subdirectory(src/core)
+add_subdirectory(src/fileitemaction)
 add_subdirectory(src/helper)
 add_subdirectory(src/plugin)
 add_subdirectory(src/qml)

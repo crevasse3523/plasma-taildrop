@@ -1,0 +1,19 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "335460626+crevasse3523@users.noreply.github.com",
+                "Name": "crevasse3523"
+            }
+        ],
+        "Description": "Send folders to a device in your tailnet with Taildrop",
+        "Icon": "network-vpn",
+        "License": "GPL-2.0-or-later",
+        "MimeTypes": [
+            "inode/directory"
+        ],
+        "Name": "Send via Tailscale",
+        "Version": "@PROJECT_VERSION@",
+        "Website": "https://github.com/crevasse3523/plasma-taildrop"
+    }
+}
