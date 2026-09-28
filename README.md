@@ -24,6 +24,7 @@ cmake -B build -DBUILD_TESTING=ON
 cmake --build build
 QT_QPA_PLATFORM=offscreen ctest --test-dir build --output-on-failure
 cmake --build build --target clang-format
+./Messages.sh                                 # update po/ after changing translatable strings
 reuse lint
 ```
 

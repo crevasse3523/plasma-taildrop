@@ -7,12 +7,14 @@
             }
         ],
         "Description": "Send folders to a device in your tailnet with Taildrop",
+        "Description[pl]": "Wysyłaj foldery do urządzenia w swoim tailnecie przez Taildrop",
         "Icon": "network-vpn",
         "License": "GPL-2.0-or-later",
         "MimeTypes": [
             "inode/directory"
         ],
         "Name": "Send via Tailscale",
+        "Name[pl]": "Wyślij przez Tailscale",
         "Version": "@PROJECT_VERSION@",
         "Website": "https://github.com/crevasse3523/plasma-taildrop"
     }

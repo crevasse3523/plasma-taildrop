@@ -3,14 +3,19 @@
 [Global]
 IconName=network-vpn
 Comment=Send via Tailscale
+Comment[pl]=Wysyłanie przez Tailscale
 DesktopEntry=@HELPER_DESKTOP_ID@
 
 [Event/transferFinished]
 Name=Files sent
+Name[pl]=Pliki wysłane
 Comment=All shared files reached the device
+Comment[pl]=Wszystkie udostępnione pliki dotarły do urządzenia
 Action=Popup
 
 [Event/transferFailed]
 Name=Sending failed
+Name[pl]=Wysyłanie nie powiodło się
 Comment=Some shared files were not sent
+Comment[pl]=Część udostępnionych plików nie została wysłana
 Action=Popup

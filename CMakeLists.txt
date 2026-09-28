@@ -36,6 +36,8 @@ add_subdirectory(src/plugin)
 add_subdirectory(src/qml)
 add_subdirectory(data)
 
+ki18n_install(po)
+
 if(BUILD_TESTING)
     add_subdirectory(autotests)
 endif()

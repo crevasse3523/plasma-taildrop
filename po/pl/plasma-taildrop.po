@@ -1,0 +1,429 @@
+# Polish translation of plasma-taildrop.
+# SPDX-FileCopyrightText: 2026 crevasse3523 <335460626+crevasse3523@users.noreply.github.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
+msgid ""
+msgstr ""
+"Project-Id-Version: plasma-taildrop\n"
+"Report-Msgid-Bugs-To: https://github.com/crevasse3523/plasma-taildrop/"
+"issues\n"
+"POT-Creation-Date: 2026-09-29 18:58+0200\n"
+"PO-Revision-Date: 2026-09-29 14:00+0200\n"
+"Last-Translator: crevasse3523 "
+"<335460626+crevasse3523@users.noreply.github.com>\n"
+"Language-Team: Polish\n"
+"Language: pl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
+"|| n%100>=20) ? 1 : 2);\n"
+
+#: src/core/urlproblemtext.h:16
+#, kde-format
+msgid "Only local files can be sent: %1"
+msgstr "Można wysyłać tylko pliki lokalne: %1"
+
+#: src/core/urlproblemtext.h:18
+#, kde-format
+msgid "%1 does not exist"
+msgstr "%1 nie istnieje"
+
+#: src/core/urlproblemtext.h:20
+#, kde-format
+msgid "Could not read %1"
+msgstr "Nie można odczytać %1"
+
+#: src/core/urlproblemtext.h:22
+#, kde-format
+msgid "%1 is neither a file nor a folder"
+msgstr "%1 nie jest ani plikiem, ani folderem"
+
+#: src/fileitemaction/taildropfileitemaction.cpp:74
+#, kde-format
+msgctxt "@action:inmenu"
+msgid "Share"
+msgstr "Udostępnij"
+
+#: src/fileitemaction/taildropfileitemaction.cpp:85
+#, kde-format
+msgctxt "@title:notification"
+msgid "Sharing failed"
+msgstr "Udostępnianie nie powiodło się"
+
+#: src/helper/archiver.cpp:77
+#, kde-format
+msgid "Could not read %1: %2"
+msgstr "Nie można odczytać %1: %2"
+
+#: src/helper/archiver.cpp:124
+#, kde-format
+msgid "Archives of type %1 are not supported."
+msgstr "Archiwa typu %1 nie są obsługiwane."
+
+#: src/helper/archiver.cpp:131
+#, kde-format
+msgid "it does not exist"
+msgstr "nie istnieje"
+
+#: src/helper/archiver.cpp:140
+#, kde-format
+msgid "Could not create an archive in %1: %2"
+msgstr "Nie można utworzyć archiwum w %1: %2"
+
+#: src/helper/archiver.cpp:167
+#, kde-format
+msgid "Could not pack %1: %2"
+msgstr "Nie można spakować %1: %2"
+
+#: src/helper/archiver.cpp:169
+#, kde-format
+msgid "zip cannot hold more than 4 GiB, choose a tar format."
+msgstr "zip nie może przekroczyć 4 GiB, wybierz format tar."
+
+#: src/helper/archiver.cpp:181
+#, kde-format
+msgid "a name is not valid UTF-8"
+msgstr "nazwa nie jest poprawnym UTF-8"
+
+#: src/helper/archiver.cpp:199
+#, kde-format
+msgid "zip cannot hold this many files and folders, choose a tar format."
+msgstr "zip nie pomieści tylu plików i folderów, wybierz format tar."
+
+#: src/helper/archiver.cpp:258
+#, kde-format
+msgid "it got shorter while it was being packed"
+msgstr "plik się skrócił w trakcie pakowania"
+
+#: src/helper/archiver.cpp:296
+#, kde-format
+msgid "it was replaced while it was being packed"
+msgstr "plik został podmieniony w trakcie pakowania"
+
+#: src/helper/batchjob.cpp:66
+#, kde-format
+msgid "Sending to %1"
+msgstr "Wysyłanie do %1"
+
+#: src/helper/batchjob.cpp:106
+#, kde-format
+msgctxt "@info:status"
+msgid "Queued, %1 send ahead"
+msgid_plural "Queued, %1 sends ahead"
+msgstr[0] "W kolejce, przed nią %1 wysyłka"
+msgstr[1] "W kolejce, przed nią %1 wysyłki"
+msgstr[2] "W kolejce, przed nią %1 wysyłek"
+
+#: src/helper/batchjob.cpp:113
+#, kde-format
+msgctxt "The file being sent"
+msgid "File"
+msgstr "Plik"
+
+#: src/helper/batchjob.cpp:127
+#, kde-format
+msgctxt "@info:status"
+msgid "Packing… %1%"
+msgstr "Pakowanie… %1%"
+
+#: src/helper/batchjob.cpp:132
+#, kde-format
+msgctxt "@info:status"
+msgid "Device not replying, still trying…"
+msgstr "Urządzenie nie odpowiada, próbuję dalej…"
+
+#: src/helper/batchjob.cpp:134
+#, kde-format
+msgctxt "@info:status waiting for the device to confirm the file"
+msgid "Finishing…"
+msgstr "Kończenie…"
+
+#: src/helper/main.cpp:28
+#, kde-format
+msgid "Send via Tailscale"
+msgstr "Wysyłanie przez Tailscale"
+
+#: src/helper/main.cpp:30
+#, kde-format
+msgid "Sends files to the devices of your tailnet with Taildrop"
+msgstr "Wysyła pliki do urządzeń w twoim tailnecie przez Taildrop"
+
+#: src/helper/main.cpp:32
+#, kde-format
+msgid "© 2026 crevasse3523"
+msgstr "© 2026 crevasse3523"
+
+#: src/helper/notifier.cpp:20
+#, kde-format
+msgid "you are not allowed to send files; run %1"
+msgstr "nie masz uprawnień do wysyłania plików; uruchom %1"
+
+#: src/helper/notifier.cpp:22
+#, kde-format
+msgid "the device is gone or does not accept files"
+msgstr "urządzenie zniknęło lub nie przyjmuje plików"
+
+#: src/helper/notifier.cpp:24
+#, kde-format
+msgid "Tailscale is not running"
+msgstr "Tailscale nie działa"
+
+#: src/helper/notifier.cpp:26
+#, kde-format
+msgid "the device could not be reached"
+msgstr "nie można połączyć się z urządzeniem"
+
+#: src/helper/notifier.cpp:28
+#, kde-format
+msgid "the device stopped replying"
+msgstr "urządzenie przestało odpowiadać"
+
+#: src/helper/notifier.cpp:35
+#, kde-format
+msgid "failed"
+msgstr "nie powiodło się"
+
+#: src/helper/notifier.cpp:41
+#, kde-format
+msgctxt "@info file name: why it failed"
+msgid "%1: %2"
+msgstr "%1: %2"
+
+#: src/helper/notifier.cpp:56
+#, kde-format
+msgid "Sent to %1"
+msgstr "Wysłano do %1"
+
+#: src/helper/notifier.cpp:58
+#, kde-format
+msgid "%1 file sent"
+msgid_plural "%1 files sent"
+msgstr[0] "Wysłano %1 plik"
+msgstr[1] "Wysłano %1 pliki"
+msgstr[2] "Wysłano %1 plików"
+
+#: src/helper/notifier.cpp:60
+#, kde-format
+msgid "Sending to %1 cancelled"
+msgstr "Anulowano wysyłanie do %1"
+
+#: src/helper/notifier.cpp:60
+#, kde-format
+msgid "Sending to %1 failed"
+msgstr "Wysyłanie do %1 nie powiodło się"
+
+#: src/helper/notifier.cpp:61
+#, kde-format
+msgctxt "@info %2 is how many of the files were sent"
+msgid "%2 of %1 file sent"
+msgid_plural "%2 of %1 files sent"
+msgstr[0] "Wysłano %2 z %1 pliku"
+msgstr[1] "Wysłano %2 z %1 plików"
+msgstr[2] "Wysłano %2 z %1 plików"
+
+#: src/helper/notifier.cpp:69
+#, kde-format
+msgid "Retry"
+msgstr "Ponów"
+
+#: src/helper/sendservice.cpp:51
+#, kde-format
+msgid "StableID of the device to send to."
+msgstr "StableID urządzenia docelowego."
+
+#: src/helper/sendservice.cpp:51
+#, kde-format
+msgid "id"
+msgstr "id"
+
+#: src/helper/sendservice.cpp:52
+#, kde-format
+msgid "Name of the device to send to."
+msgstr "Nazwa urządzenia docelowego."
+
+#: src/helper/sendservice.cpp:52
+#, kde-format
+msgid "name"
+msgstr "nazwa"
+
+#: src/helper/sendservice.cpp:53
+#, kde-format
+msgid "Archive format for folders: %1."
+msgstr "Format archiwum dla folderów: %1."
+
+#: src/helper/sendservice.cpp:53
+#, kde-format
+msgid "format"
+msgstr "format"
+
+#: src/helper/sendservice.cpp:54
+#, kde-format
+msgid "Files and folders to send."
+msgstr "Pliki i foldery do wysłania."
+
+#: src/helper/sendservice.cpp:54
+#, kde-format
+msgid "[files…]"
+msgstr "[pliki…]"
+
+#: src/plugin/taildropplugin_config.qml:55
+#, kde-format
+msgid "Refresh"
+msgstr "Odśwież"
+
+#: src/plugin/taildropplugin_config.qml:86
+#, kde-format
+msgid "Each folder is sent as an archive."
+msgstr "Każdy folder zostanie wysłany jako archiwum."
+
+#: src/plugin/taildropplugin_config.qml:87
+#, kde-format
+msgid "Folders can only be sent packed into an archive. Pack them?"
+msgstr "Foldery można wysłać tylko spakowane do archiwum. Spakować je?"
+
+#: src/plugin/taildropplugin_config.qml:90
+#, kde-format
+msgid "Pack Folders"
+msgstr "Spakuj foldery"
+
+#: src/plugin/taildropplugin_config.qml:100
+#, kde-format
+msgid "Archive format:"
+msgstr "Format archiwum:"
+
+#: src/plugin/taildropplugin_config.qml:137
+#, kde-format
+msgctxt "how the device is reached, its Tailscale IP address"
+msgid "%1, %2"
+msgstr "%1, %2"
+
+#: src/plugin/taildropplugin_config.qml:147
+#, kde-format
+msgid "Loading devices…"
+msgstr "Wczytywanie urządzeń…"
+
+#: src/plugin/taildropplugin_config.qml:149
+#, kde-format
+msgid "No devices found"
+msgstr "Nie znaleziono urządzeń"
+
+#: src/plugin/taildropplugin.cpp:38
+#, kde-format
+msgid "No device chosen"
+msgstr "Nie wybrano urządzenia"
+
+#: src/plugin/taildropplugin.cpp:47
+#, kde-format
+msgid "No files to send"
+msgstr "Brak plików do wysłania"
+
+#: src/plugin/taildropplugin.cpp:53
+#, kde-format
+msgid "Folders can only be sent packed into an archive: %1"
+msgstr "Foldery można wysłać tylko spakowane do archiwum: %1"
+
+#: src/plugin/taildropplugin.cpp:77
+#, kde-format
+msgid "Could not start %1: %2"
+msgstr "Nie można uruchomić %1: %2"
+
+#: src/qml/filesummary.cpp:21
+#, kde-format
+msgctxt "@info the shared files and their size"
+msgid "%1 file (%2)"
+msgid_plural "%1 files (%2)"
+msgstr[0] "%1 plik (%2)"
+msgstr[1] "%1 pliki (%2)"
+msgstr[2] "%1 plików (%2)"
+
+#: src/qml/filesummary.cpp:22
+#, kde-format
+msgctxt "@info the shared folders"
+msgid "%1 folder"
+msgid_plural "%1 folders"
+msgstr[0] "%1 folder"
+msgstr[1] "%1 foldery"
+msgstr[2] "%1 folderów"
+
+#: src/qml/filesummary.cpp:25
+#, kde-format
+msgctxt "@info shared files and folders"
+msgid "%1 and %2"
+msgstr "%1 i %2"
+
+#: src/qml/filesummary.cpp:27
+#, kde-format
+msgctxt "@title %1 is what is shared"
+msgid "Send %1 to:"
+msgstr "Wyślij %1 do:"
+
+#: src/qml/filesummary.cpp:27
+#, kde-format
+msgctxt "@title"
+msgid "Choose a device to send to:"
+msgstr "Wybierz urządzenie docelowe:"
+
+#: src/qml/tailscaletargets.cpp:87
+#, kde-format
+msgid "Tailscale is not running."
+msgstr "Tailscale nie działa."
+
+#: src/qml/tailscaletargets.cpp:90
+#, kde-format
+msgid "Tailscale did not answer in time."
+msgstr "Tailscale nie odpowiedział na czas."
+
+#: src/qml/tailscaletargets.cpp:93
+#, kde-format
+msgid "Could not list the devices: %1"
+msgstr "Nie można pobrać listy urządzeń: %1"
+
+#: src/qml/tailscaletargets.cpp:101
+#, kde-format
+msgid ""
+"Tailscale only lets its operator send files. To make yourself the operator, "
+"run: %1"
+msgstr ""
+"Tailscale pozwala wysyłać pliki tylko swojemu operatorowi. Aby zostać "
+"operatorem, uruchom: %1"
+
+#: src/qml/tailscaletargets.cpp:103
+#, kde-format
+msgid "Tailscale does not accept files to send: %1"
+msgstr "Tailscale nie przyjmuje plików do wysłania: %1"
+
+#: src/qml/tailscaletargets.cpp:141
+#, kde-format
+msgctxt "@info device status"
+msgid "offline, last seen %1"
+msgstr "offline, ostatnio widziane %1"
+
+#: src/qml/tailscaletargets.cpp:142
+#, kde-format
+msgctxt "@info device status"
+msgid "offline"
+msgstr "offline"
+
+#: src/qml/tailscaletargets.cpp:148
+#, kde-format
+msgctxt "@info how the device is reached"
+msgid "direct (%1)"
+msgstr "bezpośrednio (%1)"
+
+#: src/qml/tailscaletargets.cpp:151
+#, kde-format
+msgctxt ""
+"@info how the device is reached, %1 is the IP address of a Tailscale peer "
+"relay"
+msgid "via peer relay (%1)"
+msgstr "przez przekaźnik peer (%1)"
+
+#: src/qml/tailscaletargets.cpp:154
+#, kde-format
+msgctxt "@info how the device is reached, %1 is a DERP region such as waw"
+msgid "via DERP relay (%1)"
+msgstr "przez przekaźnik DERP (%1)"
+
+#, kde-format
+#~ msgid "Could not read %1: it does not exist."
+#~ msgstr "Nie można odczytać %1: nie istnieje."

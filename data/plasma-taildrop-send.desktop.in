@@ -3,7 +3,9 @@
 [Desktop Entry]
 Type=Application
 Name=Send via Tailscale
+Name[pl]=Wysyłanie przez Tailscale
 Comment=Sends shared files to the devices of your tailnet
+Comment[pl]=Wysyła udostępnione pliki do urządzeń w tailnecie
 Icon=network-vpn
 Exec=@KDE_INSTALL_FULL_LIBEXECDIR@/plasma-taildrop-send
 NoDisplay=true
