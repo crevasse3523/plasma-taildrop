@@ -168,7 +168,7 @@ private Q_SLOTS:
         qunsetenv("PLASMA_TAILDROP_SOCKET");
     }
 
-    // Qt reports a transfer timeout like abort(): whoever sets one and gets Cancelled without aborting has timed out
+    // a transfer timeout is Cancelled too: whoever sets one and gets Cancelled without aborting has timed out
     void stall()
     {
         FakeLocalApi fake;

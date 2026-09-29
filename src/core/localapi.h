@@ -28,9 +28,9 @@ enum class Outcome {
     NotOperator, // 403 from tailscaled itself: this user may not send files, see `tailscale set --operator`
     DeviceRefused, // 403 from the device, passed on by tailscaled: it takes no files, e.g. Taildrop is off there
     NodeNotFound, // 404: no such device, or it does not accept files
-    PeerUnreachable, // 502, 503, 504 or a timeout: tailscaled could not reach the device
+    PeerUnreachable, // 502, 503 or 504: tailscaled could not reach the device
     DaemonDown, // no socket, or nobody listening on it
-    Cancelled, // aborted by us, or QNetworkRequest::setTransferTimeout() ran out: Qt reports both the same way
+    Cancelled, // aborted by us, or QNetworkRequest::setTransferTimeout() ran out
     Other,
 };
 

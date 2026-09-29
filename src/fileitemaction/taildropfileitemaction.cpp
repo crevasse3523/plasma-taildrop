@@ -50,13 +50,12 @@ public:
         Purpose::Menu *menu = this->menu();
         menu->model()->setInputData({{u"mimeType"_s, mimeType.isEmpty() ? u"*/*"_s : mimeType}, {u"urls"_s, urls}});
 
-        // the menu has one action per row, in the same order; only ours stays visible
-        const Purpose::AlternativesModel *model = menu->model();
+        // only our entry stays visible; newer Purpose sorts the entries, so they are told apart by plugin ID, not by row
         const QList<QAction *> entries = menu->actions();
         bool found = false;
-        for (int row = 0; row < model->rowCount() && row < entries.size(); ++row) {
-            const bool ours = model->index(row).data(Purpose::AlternativesModel::PluginIdRole) == QLatin1StringView(SHARE_PLUGIN_ID);
-            entries[row]->setVisible(ours);
+        for (QAction *entry : entries) {
+            const bool ours = entry->property("pluginId").toString() == QLatin1StringView(SHARE_PLUGIN_ID);
+            entry->setVisible(ours);
             found = found || ours;
         }
         // no menu when Purpose leaves the plugin out, e.g. because it is disabled in purposerc

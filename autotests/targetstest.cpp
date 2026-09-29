@@ -206,7 +206,7 @@ private Q_SLOTS:
         QTest::newRow("bad request") << 400 << QNetworkReply::ProtocolInvalidOperationError << QByteArray() << Outcome::Other;
         QTest::newRow("refused") << 0 << QNetworkReply::ConnectionRefusedError << QByteArray() << Outcome::DaemonDown;
         QTest::newRow("no socket") << 0 << QNetworkReply::HostNotFoundError << QByteArray() << Outcome::DaemonDown;
-        QTest::newRow("timeout") << 0 << QNetworkReply::TimeoutError << QByteArray() << Outcome::PeerUnreachable;
+        QTest::newRow("timeout") << 0 << QNetworkReply::TimeoutError << QByteArray() << Outcome::Cancelled;
         QTest::newRow("aborted") << 0 << QNetworkReply::OperationCanceledError << QByteArray() << Outcome::Cancelled;
         QTest::newRow("aborted after headers") << 200 << QNetworkReply::OperationCanceledError << QByteArray() << Outcome::Cancelled;
         QTest::newRow("closed") << 0 << QNetworkReply::RemoteHostClosedError << QByteArray() << Outcome::Other;

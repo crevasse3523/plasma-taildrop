@@ -38,7 +38,8 @@ QString filePutPath(const QString &stableId, const QString &fileName)
 
 Outcome classify(int httpStatus, QNetworkReply::NetworkError error, QByteArrayView body)
 {
-    if (error == QNetworkReply::OperationCanceledError) {
+    // Qt 6.11 reports a transfer timeout as TimeoutError, older versions like abort()
+    if (error == QNetworkReply::OperationCanceledError || error == QNetworkReply::TimeoutError) {
         return Outcome::Cancelled;
     }
     switch (httpStatus) {
@@ -63,8 +64,6 @@ Outcome classify(int httpStatus, QNetworkReply::NetworkError error, QByteArrayVi
     case QNetworkReply::ConnectionRefusedError:
     case QNetworkReply::HostNotFoundError:
         return Outcome::DaemonDown;
-    case QNetworkReply::TimeoutError:
-        return Outcome::PeerUnreachable;
     default:
         return Outcome::Other;
     }
