@@ -34,7 +34,7 @@ jobs:
         run: |
           pacman -Syu --noconfirm --needed base-devel git cmake extra-cmake-modules \
             qt6-base qt6-declarative karchive kcoreaddons kdbusaddons ki18n kjobwidgets kio knotifications purpose
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Configure
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DINSTALL_GIT_HOOKS=OFF
       - name: Build
@@ -52,7 +52,7 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends ca-certificates git clang-format qt6-declarative-dev-tools \
             qml6-module-org-kde-kirigami qml6-module-qtquick-controls qml6-module-qtquick-layouts
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install build dependencies
         run: apt-get build-dep -y ./
       - name: Configure
@@ -85,5 +85,5 @@ jobs:
     name: REUSE
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-      - uses: fsfe/reuse-action@bb774aa972c2a89ff34781233d275075cbddf542 # v5.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: fsfe/reuse-action@676e2d560c9a403aa252096d99fcab3e1132b0f5 # v6.0.0
