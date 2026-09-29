@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2026 crevasse3523 <335460626+crevasse3523@users.noreply.github.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+# Maintainer: crevasse3523 <335460626+crevasse3523@users.noreply.github.com>
+
+pkgname=plasma-taildrop
+pkgver=1.0.0
+pkgrel=1
+pkgdesc='Send files to Tailscale devices from the KDE Share menu'
+arch=('x86_64')
+url='https://github.com/crevasse3523/plasma-taildrop'
+license=('GPL-2.0-or-later' 'CC0-1.0')
+depends=('glibc' 'libstdc++' 'karchive' 'kcoreaddons' 'kdbusaddons' 'ki18n' 'kio' 'kirigami' 'kjobwidgets'
+         'knotifications' 'purpose' 'qt6-base' 'qt6-declarative')
+makedepends=('cmake' 'extra-cmake-modules')
+checkdepends=('appstream')
+optdepends=('tailscale: the daemon that sends the files')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+# GitHub makes the tarball of a tag only once it is pushed, after this file is committed
+sha256sums=('SKIP')
+
+build() {
+    cmake -B build -S "$pkgname-$pkgver" \
+        -DCMAKE_BUILD_TYPE=None \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_TESTING=ON \
+        -DINSTALL_GIT_HOOKS=OFF
+    cmake --build build
+}
+
+check() {
+    # The tests create QML types and a QGuiApplication, and a build has no display
+    QT_QPA_PLATFORM=offscreen ctest --test-dir build --output-on-failure
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+}

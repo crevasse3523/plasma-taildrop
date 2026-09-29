@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 # Usage: scripts/release.sh X.Y.Z
-# Sets the version in CMakeLists.txt, opens a new debian/changelog entry in $EDITOR for the release notes, commits
-# both and creates the annotated tag vX.Y.Z, all as the Maintainer of debian/control, whose name and email git config
-# user.name and user.email must be. When both files already have that version, it only tags. Never pushes.
+# Sets the version in CMakeLists.txt and in the Fedora and Arch packages, opens a new debian/changelog entry in $EDITOR
+# for the release notes, commits all four and creates the annotated tag vX.Y.Z, all as the Maintainer of
+# debian/control, whose name and email git config user.name and user.email must be. When CMakeLists.txt already has
+# that version, it only tags. Never pushes.
 # Needs git and devscripts (dch).
 set -eu
 cd "$(dirname "$0")/.."
@@ -33,9 +34,15 @@ if [ "$(git config user.name) <$(git config user.email)>" != "$maintainer" ]; th
     exit 1
 fi
 
-# .github/workflows/package.yml reads the version with the same sed
+# .github/workflows/package.yml reads the versions with the same seds
 cmake_version() {
     sed -n 's/^project(plasma-taildrop VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt
+}
+spec_version() {
+    sed -n 's/^Version: *//p' packaging/plasma-taildrop.spec
+}
+pkgbuild_version() {
+    sed -n 's/^pkgver=//p' packaging/PKGBUILD
 }
 
 if [ "$(cmake_version)" != "$version" ]; then
@@ -52,13 +59,17 @@ if [ "$(cmake_version)" != "$version" ]; then
         exit 1
     fi
     sed -i "s/^project(plasma-taildrop VERSION [0-9.]*/project(plasma-taildrop VERSION $version/" CMakeLists.txt
-    git add CMakeLists.txt debian/changelog
+    sed -i "s/^Version: .*/Version:        $version/" packaging/plasma-taildrop.spec
+    sed -i "s/^pkgver=.*/pkgver=$version/" packaging/PKGBUILD
+    git add CMakeLists.txt debian/changelog packaging/plasma-taildrop.spec packaging/PKGBUILD
     git commit -m "Release $version"
 fi
 
-# CI refuses to publish a tag that differs from either file
-if [ "$(cmake_version)" != "$version" ] || [ "$(dpkg-parsechangelog -SVersion)" != "$version" ]; then
-    echo "CMakeLists.txt ($(cmake_version)) and debian/changelog ($(dpkg-parsechangelog -SVersion)) must both be $version." >&2
+# CI refuses to publish a tag that differs from any of these files
+if [ "$(cmake_version)" != "$version" ] || [ "$(dpkg-parsechangelog -SVersion)" != "$version" ] \
+    || [ "$(spec_version)" != "$version" ] || [ "$(pkgbuild_version)" != "$version" ]; then
+    echo "CMakeLists.txt ($(cmake_version)), debian/changelog ($(dpkg-parsechangelog -SVersion))," \
+        "packaging/plasma-taildrop.spec ($(spec_version)) and packaging/PKGBUILD ($(pkgbuild_version)) must all be $version." >&2
     exit 1
 fi
 git tag -a "v$version" -m "plasma-taildrop $version"

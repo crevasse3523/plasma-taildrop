@@ -33,8 +33,8 @@ that has already loaded an older build keeps it, so quit it completely before tr
 - After changing translatable strings, run `./Messages.sh` and update `po/pl/plasma-taildrop.po` if you can.
 
 CI builds and tests on Arch Linux and Debian 13. On Debian it also checks the formatting, runs qmllint, checks that
-`po/` has every string (translations may be missing) and builds and lints the Debian package. `reuse lint` runs on
-its own.
+`po/` has every string (translations may be missing) and builds and lints the Debian package. It also builds the
+packages for Ubuntu 26.04, Fedora and Arch Linux, which run the tests too. `reuse lint` runs on its own.
 
 ## Guidelines
 

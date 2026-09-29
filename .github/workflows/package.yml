@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 crevasse3523 <335460626+crevasse3523@users.noreply.github.com>
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-name: Debian package
+name: Packages
 
 on:
   push:
@@ -17,16 +17,34 @@ concurrency:
 
 jobs:
   deb:
+    # Ubuntu gets a package of its own: a .deb built on Debian depends on Debian's library versions
+    strategy:
+      matrix:
+        include:
+          - system: debian13
+            image: debian:trixie
+          - system: ubuntu26.04
+            image: ubuntu:26.04
+            version-suffix: "~ubuntu26.04"
+            distribution: resolute
+    name: deb (${{ matrix.system }})
     runs-on: ubuntu-latest
-    container: debian:trixie
+    container: ${{ matrix.image }}
     steps:
       - name: Install tools
         run: |
+          # the minimal Ubuntu image leaves out translations when it installs a package, which the smoke test checks
+          rm -f /etc/dpkg/dpkg.cfg.d/excludes
           apt-get update
           apt-get install -y --no-install-recommends ca-certificates git dpkg-dev lintian autopkgtest
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: plasma-taildrop
+      - name: Mark the version
+        if: matrix.version-suffix
+        working-directory: plasma-taildrop
+        # only the first line of the newest entry: plasma-taildrop (X.Y.Z) unstable; urgency=medium
+        run: sed -i '1s/(\([^)]*\)) unstable;/(\1${{ matrix.version-suffix }}) ${{ matrix.distribution }};/' debian/changelog
       - name: Install build dependencies
         working-directory: plasma-taildrop
         run: apt-get build-dep -y ./
@@ -40,8 +58,68 @@ jobs:
         run: autopkgtest plasma-taildrop_*_amd64.deb plasma-taildrop/ -- null
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: plasma-taildrop-deb
+          name: plasma-taildrop-${{ matrix.system }}
           path: plasma-taildrop_*_amd64.deb
+          if-no-files-found: error
+
+  rpm:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Install tools
+        run: dnf install -y git rpm-build
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install build dependencies
+        run: dnf builddep -y packaging/plasma-taildrop.spec
+      - name: Build package
+        # %check runs the unit tests, so this is also the Fedora CI
+        run: |
+          git config --global --add safe.directory "$PWD"
+          version=$(rpmspec -q --srpm --qf '%{version}' packaging/plasma-taildrop.spec)
+          mkdir -p ~/rpmbuild/SOURCES
+          # the tarball GitHub serves for the tag, made from this commit
+          git archive --prefix="plasma-taildrop-$version/" -o ~/rpmbuild/SOURCES/"plasma-taildrop-$version.tar.gz" HEAD
+          rpmbuild -bb packaging/plasma-taildrop.spec
+          cp ~/rpmbuild/RPMS/x86_64/plasma-taildrop-"$version"-*.rpm .
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: plasma-taildrop-fedora
+          path: plasma-taildrop-*.rpm
+          if-no-files-found: error
+
+  arch:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Install tools
+        run: pacman -Syu --noconfirm --needed base-devel git
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install build dependencies
+        # here, as makepkg -s would need sudo in the build below
+        run: |
+          . packaging/PKGBUILD
+          pacman -S --noconfirm --needed "${depends[@]}" "${makedepends[@]}" "${checkdepends[@]}"
+      - name: Build package
+        # check() runs the unit tests
+        run: |
+          git config --global --add safe.directory "$PWD"
+          . packaging/PKGBUILD
+          mkdir /tmp/arch
+          cp packaging/PKGBUILD /tmp/arch/
+          # the tarball GitHub serves for the tag, made from this commit; makepkg takes it instead of downloading
+          git archive --prefix="$pkgname-$pkgver/" -o "/tmp/arch/$pkgname-$pkgver.tar.gz" HEAD
+          # makepkg refuses to run as root
+          useradd -m builder
+          chown -R builder /tmp/arch
+          su builder -c 'cd /tmp/arch && makepkg --noconfirm'
+          cp /tmp/arch/"$pkgname-$pkgver"-*.pkg.tar.zst .
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: plasma-taildrop-arch
+          path: plasma-taildrop-*.pkg.tar.zst
           if-no-files-found: error
 
   ci:
@@ -50,7 +128,7 @@ jobs:
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [deb, ci]
+    needs: [deb, rpm, arch, ci]
     runs-on: ubuntu-latest
     container: debian:trixie
     permissions:
@@ -66,25 +144,33 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: plasma-taildrop-deb
+          pattern: plasma-taildrop-*
+          merge-multiple: true
           path: dist
       - name: Check the version
-        # The tag, debian/changelog and the CMake project version must all agree
-        # The sed is the same as cmake_version() in scripts/release.sh
+        # The tag, debian/changelog, the CMake project version and both packaging files must all agree
+        # The seds are the same as in scripts/release.sh
         run: |
           tag="${GITHUB_REF_NAME#v}"
           changelog="$(dpkg-parsechangelog -SVersion)"
           cmake="$(sed -n 's/^project(plasma-taildrop VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
-          echo "tag $tag, debian/changelog $changelog, CMakeLists.txt $cmake"
-          test "$tag" = "$changelog" && test "$tag" = "$cmake"
+          spec="$(sed -n 's/^Version: *//p' packaging/plasma-taildrop.spec)"
+          pkgbuild="$(sed -n 's/^pkgver=//p' packaging/PKGBUILD)"
+          echo "tag $tag, debian/changelog $changelog, CMakeLists.txt $cmake, spec $spec, PKGBUILD $pkgbuild"
+          test "$tag" = "$changelog" && test "$tag" = "$cmake" && test "$tag" = "$spec" && test "$tag" = "$pkgbuild"
           test -e "dist/plasma-taildrop_${tag}_amd64.deb"
+          test -e "dist/plasma-taildrop_${tag}~ubuntu26.04_amd64.deb"
+          ls dist/plasma-taildrop-"${tag}"-1.fc*.x86_64.rpm
+          test -e "dist/plasma-taildrop-${tag}-1-x86_64.pkg.tar.zst"
       - name: Checksums and release notes
         run: |
-          (cd dist && sha256sum *.deb > SHA256SUMS)
+          (cd dist && sha256sum *.deb *.rpm *.pkg.tar.zst > SHA256SUMS)
           dpkg-parsechangelog -SChanges | tail -n +4 | sed 's/^  //' > notes.md
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           body_path: notes.md
           files: |
             dist/plasma-taildrop_*_amd64.deb
+            dist/plasma-taildrop-*.rpm
+            dist/plasma-taildrop-*.pkg.tar.zst
             dist/SHA256SUMS

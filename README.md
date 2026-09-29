@@ -30,7 +30,7 @@ Only local files can be sent.
 
 ## Requirements
 
-- KDE Plasma 6 / KDE Frameworks 6 and Qt 6.8 or newer (Debian 13, Ubuntu 25.04, Fedora 41, Arch Linux)
+- KDE Plasma 6 / KDE Frameworks 6 and Qt 6.8 or newer (Debian 13, Ubuntu 26.04, Fedora, Arch Linux)
 - [Tailscale](https://tailscale.com/download/linux) with Taildrop enabled for your tailnet
 - Your user must be the Tailscale operator, so it can send files without root:
 
@@ -40,22 +40,47 @@ Only local files can be sent.
 
   The Share dialog shows this command when it is needed. `tailscale file cp --targets` should list your devices.
 
-## Installing on Debian 13
+## Installing
 
-Download `plasma-taildrop_<version>_amd64.deb` and `SHA256SUMS` from the
+Download the package for your system and `SHA256SUMS` from the
 [latest release](https://github.com/crevasse3523/plasma-taildrop/releases/latest), check the download, and
-install it:
+install it.
+
+**Debian 13:** `plasma-taildrop_<version>_amd64.deb`
 
 ```sh
-sha256sum -c SHA256SUMS
-sudo apt install ./plasma-taildrop_*_amd64.deb
+sha256sum -c --ignore-missing SHA256SUMS
+sudo apt install ./plasma-taildrop_<version>_amd64.deb
 ```
+
+**Ubuntu 26.04:** `plasma-taildrop_<version>~ubuntu26.04_amd64.deb`
+
+```sh
+sha256sum -c --ignore-missing SHA256SUMS
+sudo apt install ./plasma-taildrop_<version>~ubuntu26.04_amd64.deb
+```
+
+**Fedora:** `plasma-taildrop-<version>-1.fc<NN>.x86_64.rpm`, built on the current Fedora release
+
+```sh
+sha256sum -c --ignore-missing SHA256SUMS
+sudo dnf install ./plasma-taildrop-<version>-*.x86_64.rpm
+```
+
+**Arch Linux:** `plasma-taildrop-<version>-1-x86_64.pkg.tar.zst`
+
+```sh
+sha256sum -c --ignore-missing SHA256SUMS
+sudo pacman -U ./plasma-taildrop-<version>-1-x86_64.pkg.tar.zst
+```
+
+Or build it yourself with `makepkg -si` in `packaging/`, which downloads the source of the release.
 
 Share and the folder context menu pick the plugin up right away, with no restart. After an upgrade, an app that has
 already used the plugin keeps the old version until it is quit completely and started again (`killall dolphin`).
 Queueing and sending run in a separate helper, so their fixes apply at once.
 
-Remove it with `sudo apt remove plasma-taildrop`.
+Remove it with `sudo apt remove plasma-taildrop`, `sudo dnf remove plasma-taildrop` or `sudo pacman -R plasma-taildrop`.
 
 ## Building from source
 
@@ -143,6 +168,14 @@ lintian --fail-on error,warning ../plasma-taildrop_*.changes
 
 `debian/tests/smoke` is an autopkgtest that checks the installed package.
 
+### Fedora package
+
+```sh
+sudo dnf builddep packaging/plasma-taildrop.spec
+git archive --prefix=plasma-taildrop-X.Y.Z/ -o ~/rpmbuild/SOURCES/plasma-taildrop-X.Y.Z.tar.gz HEAD
+rpmbuild -bb packaging/plasma-taildrop.spec     # writes ~/rpmbuild/RPMS/x86_64/plasma-taildrop-X.Y.Z-*.rpm
+```
+
 ### Releasing
 
 The release notes are the new entry in `debian/changelog`; there is no separate changelog file.
@@ -152,8 +185,10 @@ scripts/release.sh X.Y.Z        # sets the version, opens debian/changelog for t
 git push --follow-tags
 ```
 
-For a tag `v*`, CI checks that the tag, `debian/changelog` and `CMakeLists.txt` have the same version, builds and
-tests the `.deb` on Debian 13, and publishes it with `SHA256SUMS` and the changelog entry as a GitHub release.
+`release.sh` also sets the version in `packaging/plasma-taildrop.spec` and `packaging/PKGBUILD`. For a tag `v*`, CI
+checks that the tag and all these files have the same version, builds and tests a `.deb` for Debian 13 and one for
+Ubuntu 26.04, an `.rpm` for Fedora and a package for Arch Linux, and publishes them with `SHA256SUMS` and the
+changelog entry as a GitHub release.
 
 ### How it works
 
@@ -169,6 +204,7 @@ tests the `.deb` on Debian 13, and publishes it with `SHA256SUMS` and the change
 | `data/` | The desktop entry and the notification events of `plasma-taildrop-send`, and the AppStream metadata of the plugin |
 | `autotests/` | Unit tests, with a fake `tailscaled` (`fakelocalapi.h`) and anonymized replies of a real one (`data/`) |
 | `debian/` | The Debian package and its autopkgtest |
+| `packaging/` | The Fedora (`.spec`) and Arch Linux (`PKGBUILD`) packages |
 | `scripts/release.sh` | Sets the version, adds the changelog entry, commits and tags a release |
 
 The last used device and the archive format are stored in `~/.config/plasma-taildrop.conf`.
