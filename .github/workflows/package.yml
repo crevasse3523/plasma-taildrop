@@ -1,0 +1,90 @@
+# SPDX-FileCopyrightText: 2026 crevasse3523 <335460626+crevasse3523@users.noreply.github.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+name: Debian package
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deb:
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - name: Install tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates git dpkg-dev lintian autopkgtest
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          path: plasma-taildrop
+      - name: Install build dependencies
+        working-directory: plasma-taildrop
+        run: apt-get build-dep -y ./
+      - name: Build package
+        working-directory: plasma-taildrop
+        run: dpkg-buildpackage -us -uc -b
+      - name: Lintian
+        run: lintian --fail-on error,warning --info plasma-taildrop_*.changes
+      - name: Autopkgtest
+        # The container runs as root, so the null testbed can install the package and the test dependencies
+        run: autopkgtest plasma-taildrop_*_amd64.deb plasma-taildrop/ -- null
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: plasma-taildrop-deb
+          path: plasma-taildrop_*_amd64.deb
+          if-no-files-found: error
+
+  ci:
+    if: startsWith(github.ref, 'refs/tags/v')
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [deb, ci]
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    permissions:
+      contents: write
+    steps:
+      - name: Install tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates dpkg-dev
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          # nothing here pushes, so the write token stays out of .git/config
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: plasma-taildrop-deb
+          path: dist
+      - name: Check the version
+        # The tag, debian/changelog and the CMake project version must all agree
+        # The sed is the same as cmake_version() in scripts/release.sh
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          changelog="$(dpkg-parsechangelog -SVersion)"
+          cmake="$(sed -n 's/^project(plasma-taildrop VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
+          echo "tag $tag, debian/changelog $changelog, CMakeLists.txt $cmake"
+          test "$tag" = "$changelog" && test "$tag" = "$cmake"
+          test -e "dist/plasma-taildrop_${tag}_amd64.deb"
+      - name: Checksums and release notes
+        run: |
+          (cd dist && sha256sum *.deb > SHA256SUMS)
+          dpkg-parsechangelog -SChanges | tail -n +4 | sed 's/^  //' > notes.md
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
+        with:
+          body_path: notes.md
+          files: |
+            dist/plasma-taildrop_*_amd64.deb
+            dist/SHA256SUMS

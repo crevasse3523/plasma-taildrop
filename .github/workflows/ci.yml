@@ -1,0 +1,89 @@
+# SPDX-FileCopyrightText: 2026 crevasse3523 <335460626+crevasse3523@users.noreply.github.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+name: CI
+
+on:
+  # tags are checked by package.yml, which calls this before it releases
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  # not github.workflow: when package.yml calls this, that is the caller's name and both would share a group
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The tests create QML types and a QGuiApplication
+  QT_QPA_PLATFORM: offscreen
+
+jobs:
+  arch:
+    name: Arch Linux
+    runs-on: ubuntu-latest
+    # Arch ships the newest KF6 and Qt 6, so upcoming breakage shows up here first
+    container: archlinux:latest
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm --needed base-devel git cmake extra-cmake-modules \
+            qt6-base qt6-declarative karchive kcoreaddons kdbusaddons ki18n kjobwidgets kio knotifications purpose
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DINSTALL_GIT_HOOKS=OFF
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  debian:
+    name: Debian 13
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - name: Install tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates git clang-format qt6-declarative-dev-tools \
+            qml6-module-org-kde-kirigami qml6-module-qtquick-controls qml6-module-qtquick-layouts
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Install build dependencies
+        run: apt-get build-dep -y ./
+      - name: Configure
+        run: cmake -B build -DBUILD_TESTING=ON -DINSTALL_GIT_HOOKS=OFF
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+      - name: Check formatting
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          cmake --build build --target clang-format
+          git diff --exit-code
+      - name: Lint the Share dialog
+        # --bare and the build directory first: an installed older module must not shadow the one just built
+        run: |
+          /usr/lib/qt6/bin/qmllint --max-warnings 0 --bare -I build/bin -I /usr/lib/x86_64-linux-gnu/qt6/qml \
+            src/plugin/taildropplugin_config.qml
+      - name: Check that po/ has every string
+        # Translating is optional: only a string missing from po/ fails, which means Messages.sh was not run
+        run: |
+          committed=$(mktemp -d)
+          cp -r po "$committed"
+          ./Messages.sh
+          for po in "$committed"/po/*/plasma-taildrop.po; do
+            msgcmp --use-untranslated --use-fuzzy "$po" po/plasma-taildrop.pot
+          done
+
+  reuse:
+    name: REUSE
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: fsfe/reuse-action@bb774aa972c2a89ff34781233d275075cbddf542 # v5.0.0
