@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2026 crevasse3523 <335460626+crevasse3523@users.noreply.github.com>
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+name: Bug report
+description: Something does not work as described in the README
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check the Troubleshooting section of the README first. Report security problems privately,
+        as described in SECURITY.md, not here.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead. Include the exact error message.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: plasma-taildrop version
+      description: "`dpkg -s plasma-taildrop | grep Version`, or the commit you built"
+    validations:
+      required: true
+  - type: input
+    id: distro
+    attributes:
+      label: Distribution and Plasma version
+      placeholder: Debian 13, Plasma 6.3.6
+    validations:
+      required: true
+  - type: input
+    id: tailscale
+    attributes:
+      label: Tailscale version
+      description: "`tailscale version`"
+    validations:
+      required: true
+  - type: dropdown
+    id: what-shared
+    attributes:
+      label: What was shared
+      multiple: true
+      options:
+        - One file
+        - Several files
+        - A folder
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Output of `journalctl --user -b | grep -i plasma-taildrop`. Device names and addresses may appear here,
+        so edit them out if you prefer.
+      render: text
