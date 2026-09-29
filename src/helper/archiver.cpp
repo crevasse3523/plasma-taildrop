@@ -295,7 +295,11 @@ KLocalizedString openInside(const QString &root, QFile &file, struct stat &info)
         ::close(fd);
         return readError(file.fileName(), ki18n("it was replaced while it was being packed"));
     }
-    file.open(fd, QIODevice::ReadOnly, QFileDevice::AutoCloseHandle);
+    // QFile takes over the descriptor only when it opens it
+    if (!file.open(fd, QIODevice::ReadOnly, QFileDevice::AutoCloseHandle)) {
+        ::close(fd);
+        return readError(file.fileName(), file.errorString());
+    }
     return KLocalizedString();
 }
 
