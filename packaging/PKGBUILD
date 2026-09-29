@@ -4,7 +4,7 @@
 # Maintainer: crevasse3523 <335460626+crevasse3523@users.noreply.github.com>
 
 pkgname=plasma-taildrop
-pkgver=1.0.0
+pkgver=1.0.1
 pkgrel=1
 pkgdesc='Send files to Tailscale devices from the KDE Share menu'
 arch=('x86_64')

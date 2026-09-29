@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 cmake_minimum_required(VERSION 3.16)
-project(plasma-taildrop VERSION 1.0.0 LANGUAGES CXX)
+project(plasma-taildrop VERSION 1.0.1 LANGUAGES CXX)
 
 find_package(ECM 6.0 REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH})

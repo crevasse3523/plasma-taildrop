@@ -4,7 +4,7 @@
 # Fedora package. The release notes are in debian/changelog, so there is no %%changelog here.
 
 Name:           plasma-taildrop
-Version:        1.0.0
+Version:        1.0.1
 Release:        1%{?dist}
 Summary:        Send files to Tailscale devices from the KDE Share menu
 License:        GPL-2.0-or-later AND CC0-1.0

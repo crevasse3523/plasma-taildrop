@@ -1,3 +1,15 @@
+plasma-taildrop (1.0.1) unstable; urgency=medium
+
+  * Packages for Ubuntu 26.04, Fedora and Arch Linux next to the one for
+    Debian 13.
+  * Newer KDE Frameworks: the folder context menu of Dolphin offers Send via
+    Tailscale again.
+  * Newer Qt: a tailscaled that does not answer is reported as such.
+  * A file that cannot be opened while a folder is packed fails with a clear
+    message.
+
+ -- crevasse3523 <335460626+crevasse3523@users.noreply.github.com>  Tue, 29 Sep 2026 21:44:12 +0200
+
 plasma-taildrop (1.0.0) unstable; urgency=medium
 
   * Initial release.
